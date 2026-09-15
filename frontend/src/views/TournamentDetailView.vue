@@ -126,6 +126,8 @@
           <option value="ALTERNATE">Remplaçant (ALT)</option>
           <option value="NEW_GENERATION">New Generation (NG)</option>
           <option value="SPECIAL_EXEMPT">Special exempt (SE)</option>
+          <option value="PROTECTED_RANKING">Classement protégé (PR)</option>
+          <option value="CUT_OFF">Repêché / cut-off (CO)</option>
         </select>
         <button type="submit">Ajouter</button>
       </form>

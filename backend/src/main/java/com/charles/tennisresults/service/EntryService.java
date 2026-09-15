@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 public class EntryService {
@@ -57,6 +58,13 @@ public class EntryService {
             }
             Player player = playerRepository.findById(dto.playerId())
                     .orElseThrow(() -> new EntityNotFoundException("Joueur introuvable: " + dto.playerId()));
+
+            if (!entryRepository.findByTournamentIdAndPlayerId(tournamentId, dto.playerId()).isEmpty()) {
+                throw new IllegalArgumentException(
+                        player.getLastName() + " est deja inscrit dans ce tableau.");
+            }
+            checkSameWeekConflict(tournament, player);
+
             entry.setPlayer(player);
         }
 
@@ -73,6 +81,36 @@ public class EntryService {
         bracketService.clearEntryFromMatches(entry);
         entryRepository.delete(entry);
         bracketService.syncRound1FromEntries(tournamentId);
+    }
+
+    /**
+     * Un joueur ne peut pas etre inscrit dans 2 tournois differents la meme
+     * semaine (meme saison) - un vrai joueur ne joue qu'un seul evenement a
+     * la fois. Le tableau de qualifs et son tableau principal partagent la
+     * meme semaine par construction et ne comptent pas comme "2 tournois"
+     * (un qualifie promu au tableau principal y a legitimement sa propre
+     * entree, en plus de celle des qualifs).
+     */
+    private void checkSameWeekConflict(Tournament tournament, Player player) {
+        if (tournament.getWeekNumber() == null) {
+            return; // semaine non renseignee : rien a comparer
+        }
+        Long siblingId = tournament.isQualifying()
+                ? tournament.getMainTournamentId()
+                : tournamentRepository.findByMainTournamentId(tournament.getId()).map(Tournament::getId).orElse(null);
+
+        for (Entry existing : entryRepository.findByPlayerId(player.getId())) {
+            Tournament other = existing.getTournament();
+            if (other.getId().equals(tournament.getId()) || other.getId().equals(siblingId)) {
+                continue;
+            }
+            if (Objects.equals(other.getSeason(), tournament.getSeason())
+                    && Objects.equals(other.getWeekNumber(), tournament.getWeekNumber())) {
+                throw new IllegalArgumentException(
+                        player.getLastName() + " est deja inscrit a " + other.getName()
+                                + " la meme semaine (semaine " + tournament.getWeekNumber() + ").");
+            }
+        }
     }
 
     private EntryDto toDto(Entry e) {

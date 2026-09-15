@@ -1,6 +1,7 @@
 package com.charles.tennisresults.service;
 
 import com.charles.tennisresults.domain.Tournament;
+import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.domain.TournamentRound;
 import com.charles.tennisresults.dto.QualifyingCreateDto;
 import com.charles.tennisresults.dto.RoundPointsDto;
@@ -135,7 +136,14 @@ public class TournamentService {
         q.setName(main.getName() + " - Qualifs");
         q.setCategory(main.getCategory());
         q.setSeason(main.getSeason());
-        q.setWeekNumber(main.getWeekNumber());
+        // Seuls les Grand Chelem jouent leurs qualifs la semaine PRECEDENT le
+        // tableau principal (evenement a part sur le calendrier) ; pour toutes
+        // les autres categories, qualifs et tableau principal sont la meme
+        // semaine (Charles, 2026-09-15 - ex: Watanuki inscrit a Phan Thiet la
+        // meme semaine que les qualifs de l'Australian Open).
+        q.setWeekNumber(main.getCategory() == TournamentCategory.GRAND_SLAM && main.getWeekNumber() != null
+                ? main.getWeekNumber() - 1
+                : main.getWeekNumber());
         q.setCountry(main.getCountry());
         q.setDrawSize(dto.drawSize());
         q.setQualifying(true);

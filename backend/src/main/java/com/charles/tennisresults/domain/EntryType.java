@@ -8,5 +8,7 @@ public enum EntryType {
     LUCKY_LOSER,
     ALTERNATE,
     NEW_GENERATION,
-    SPECIAL_EXEMPT
+    SPECIAL_EXEMPT,
+    PROTECTED_RANKING,
+    CUT_OFF
 }

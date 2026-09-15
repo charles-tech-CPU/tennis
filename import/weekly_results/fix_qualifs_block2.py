@@ -37,7 +37,8 @@ def fmt(raw):
 def entry_type_for(tag):
     return {
         'WC': 'WILD_CARD', 'Q': 'QUALIFIER', 'LL': 'LUCKY_LOSER',
-        'ALT': 'ALTERNATE', 'NG': 'NEW_GENERATION', 'SE': 'SPECIAL_EXEMPT'
+        'ALT': 'ALTERNATE', 'NG': 'NEW_GENERATION', 'SE': 'SPECIAL_EXEMPT',
+        'PR': 'PROTECTED_RANKING', 'CO': 'CUT_OFF'
     }.get(tag)
 
 def seed_for(tag):

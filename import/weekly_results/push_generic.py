@@ -50,6 +50,10 @@ def entry_type_for(tag):
         return 'NEW_GENERATION'
     if tag == 'SE':
         return 'SPECIAL_EXEMPT'
+    if tag == 'PR':
+        return 'PROTECTED_RANKING'
+    if tag == 'CO':
+        return 'CUT_OFF'
     return None
 
 def seed_for(tag):

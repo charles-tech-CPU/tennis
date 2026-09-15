@@ -51,7 +51,9 @@ export const ENTRY_TYPE_SHORT_LABELS = {
   LUCKY_LOSER: 'LL',
   ALTERNATE: 'ALT',
   NEW_GENERATION: 'NG',
-  SPECIAL_EXEMPT: 'SE'
+  SPECIAL_EXEMPT: 'SE',
+  PROTECTED_RANKING: 'PR',
+  CUT_OFF: 'CO'
 }
 
 export const ENTRY_TYPE_LABELS = {
@@ -60,7 +62,9 @@ export const ENTRY_TYPE_LABELS = {
   LUCKY_LOSER: 'Lucky loser',
   ALTERNATE: 'Remplaçant (ALT)',
   NEW_GENERATION: 'New Generation',
-  SPECIAL_EXEMPT: 'Special exempt'
+  SPECIAL_EXEMPT: 'Special exempt',
+  PROTECTED_RANKING: 'Classement protégé (PR)',
+  CUT_OFF: 'Repêché / cut-off (CO)'
 }
 
 export function entryTypeShortLabel(type) {
@@ -79,7 +83,7 @@ export function entryTypeLabel(type) {
 const COUNTRY_ISO = {
   'AFRIQUE SUD': 'za', 'ALGERIE': 'dz', 'ALLEMAGNE': 'de', 'ANGLETERRE': 'gb-eng',
   'ARGENTINE': 'ar', 'ARUBA': 'aw', 'AUSTRALIE': 'au', 'AUTRICHE': 'at',
-  'BAHAMAS': 'bs', 'BARBADE': 'bb', 'BELGIQUE': 'be', 'BIELORUSSIE': 'by',
+  'BAHAMAS': 'bs', 'BAHREIN': 'bh', 'BARBADE': 'bb', 'BELGIQUE': 'be', 'BIELORUSSIE': 'by',
   'BOLIVIE': 'bo', 'BOSNIE': 'ba', 'BRESIL': 'br', 'BULGARIE': 'bg',
   'BURUNDI': 'bi', 'CANADA': 'ca', 'CHILI': 'cl', 'CHINE': 'cn',
   'CHYPRE': 'cy', 'COLOMBIE': 'co', 'COREE': 'kr', 'COSTA RICA': 'cr',
@@ -87,7 +91,7 @@ const COUNTRY_ISO = {
   'DOMINQUE': 'dm', 'EAU': 'ae', 'ECOSSE': 'gb-sct', 'EGYPTE': 'eg', 'EQUATEUR': 'ec',
   'ESPAGNE': 'es', 'ESTONIE': 'ee', 'FINLANDE': 'fi', 'FRANCE': 'fr',
   'GEORGIE': 'ge', 'GRECE': 'gr', 'HOLLANDE': 'nl', 'HONG KONG': 'hk',
-  'HONGRIE': 'hu', 'INDE': 'in', 'IRAN': 'ir', 'IRLANDE': 'ie',
+  'HONGRIE': 'hu', 'INDE': 'in', 'INDONESIE': 'id', 'IRAN': 'ir', 'IRLANDE': 'ie',
   'ISRAEL': 'il', 'ITALIE': 'it', 'JAMAIQUE': 'jm', 'JAPON': 'jp',
   'KAZAKHSTAN': 'kz', 'LETTONIE': 'lv', 'LIBAN': 'lb', 'LITUANIE': 'lt',
   'LUXEMBOURG': 'lu', 'MALAISIE': 'my', 'MAROC': 'ma', 'MEXIQUE': 'mx',
@@ -97,7 +101,7 @@ const COUNTRY_ISO = {
   'RUSSIE': 'ru', 'SERBIE': 'rs', 'SLOVAQUIE': 'sk', 'SLOVENIE': 'si',
   'SUEDE': 'se', 'SUISSE': 'ch', 'TAIWAN': 'tw', 'TCHEQUIE': 'cz',
   'THAILANDE': 'th', 'TUNISIE': 'tn', 'TUNSIE': 'tn', 'TURQUIE': 'tr',
-  'UKRAINE': 'ua', 'URUGUAY': 'uy', 'USA': 'us', 'VENEZUELA': 've',
+  'UKRAINE': 'ua', 'URUGUAY': 'uy', 'USA': 'us', 'VENEZUELA': 've', 'VIETNAM': 'vn',
   'ZIMBABWE': 'zw', 'ILES VIERGES': 'vg'
 }
 
