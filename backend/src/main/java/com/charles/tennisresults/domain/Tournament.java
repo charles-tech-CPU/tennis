@@ -53,7 +53,10 @@ public class Tournament {
     private Integer drawSize;
 
     /** Points de qualification (informatif uniquement, non comptes dans le classement). */
+    @Column(name = "qualifying_round1_points")
     private Integer qualifyingRound1Points;
+
+    @Column(name = "qualifying_round2_points")
     private Integer qualifyingRound2Points;
 
     /**
@@ -63,6 +66,14 @@ public class Tournament {
      * nombre de points dans le circuit ATP).
      */
     private Integer runnerUpPoints;
+
+    /** True si ce tournoi EST un tableau de qualifications (relie via mainTournamentId). */
+    @Column(name = "is_qualifying", nullable = false)
+    private boolean qualifying = false;
+
+    /** Renseigne uniquement sur le tableau de qualifications : id du tournoi principal. */
+    @Column(name = "main_tournament_id")
+    private Long mainTournamentId;
 
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("roundOrder ASC")

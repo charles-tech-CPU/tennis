@@ -1,85 +1,622 @@
+/* ---------------------------------------------------------------------- */
+/* Design tokens                                                          */
+/* ---------------------------------------------------------------------- */
+:root {
+  --bg: #f6f2ea;
+  --surface: #ffffff;
+  --surface-alt: #fbf7f0;
+  --border: #e7dfd0;
+  --border-strong: #d9cbb2;
+
+  --text: #2b241d;
+  --text-muted: #7a705f;
+  --text-faint: #a89c85;
+
+  --clay: #bf5730;
+  --clay-hover: #a4451f;
+  --clay-soft: #f6e0d1;
+  --clay-soft-text: #8a3c1e;
+
+  --grass: #2f7a4f;
+  --grass-hover: #24603e;
+  --grass-soft: #dcf0e1;
+  --grass-soft-text: #1f5c37;
+
+  --gold: #a9761c;
+  --gold-soft: #f5e7c6;
+  --gold-soft-text: #7a5510;
+
+  --danger: #b3382c;
+  --danger-soft: #f7ded9;
+  --danger-soft-text: #8a281e;
+
+  --neutral-soft: #ece4d4;
+  --neutral-soft-text: #6b6252;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(43, 36, 26, 0.07);
+  --shadow-md: 0 6px 20px rgba(43, 36, 26, 0.10);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Reset & base                                                           */
+/* ---------------------------------------------------------------------- */
 * { box-sizing: border-box; }
+
 body {
   margin: 0;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  background: #12181f;
-  color: #e6ecf1;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
 }
-a { color: #7fd0ff; text-decoration: none; }
+
+h1, h2, h3 { line-height: 1.25; margin: 0 0 4px; letter-spacing: -0.01em; }
+h1 { font-size: 26px; font-weight: 700; }
+h2 { font-size: 19px; font-weight: 700; }
+h3 { font-size: 15px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+p { line-height: 1.5; }
+
+a { color: var(--clay); text-decoration: none; font-weight: 600; }
 a:hover { text-decoration: underline; }
 
+/* ---------------------------------------------------------------------- */
+/* Layout                                                                 */
+/* ---------------------------------------------------------------------- */
 .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 14px 24px;
-  background: #1a2330;
-  border-bottom: 1px solid #2a3644;
+  gap: 8px;
+  padding: 12px 28px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
 }
-.topbar h1 { margin: 0; font-size: 20px; }
-.topbar nav { display: flex; gap: 16px; }
-.topbar nav a.router-link-exact-active { color: #fff; font-weight: 600; }
+.topbar .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-right: 24px;
+}
+.topbar .brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--clay), var(--gold));
+  font-size: 17px;
+}
+.topbar h1 { margin: 0; font-size: 17px; font-weight: 800; color: var(--text); }
+.topbar nav { display: flex; gap: 4px; }
+.topbar nav a {
+  padding: 7px 14px;
+  border-radius: 999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+.topbar nav a:hover { color: var(--text); text-decoration: none; background: var(--surface-alt); }
+.topbar nav a.router-link-exact-active { color: var(--clay-soft-text); background: var(--clay-soft); }
 
-main { padding: 20px 24px; max-width: 1200px; margin: 0 auto; }
+main { padding: 28px; max-width: 1180px; margin: 0 auto; }
+main.wide { max-width: 1720px; }
 
-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
-th, td { padding: 6px 10px; border-bottom: 1px solid #2a3644; text-align: left; font-size: 14px; }
-th { color: #9fb0c0; font-weight: 600; }
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.page-header .subtitle { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
+.page-header .actions { display: flex; gap: 8px; align-items: center; }
 
-input, select, button { font-size: 14px; padding: 6px 8px; border-radius: 4px; border: 1px solid #37485a; background: #1a2330; color: #e6ecf1; }
-button { cursor: pointer; background: #2b6cb0; border-color: #2b6cb0; }
-button:hover { background: #3a7fc4; }
-button.secondary { background: #2a3644; border-color: #37485a; }
+.section-title { margin: 32px 0 12px; }
 
-.card { background: #1a2330; border: 1px solid #2a3644; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.filters { display: flex; gap: 12px; margin: 12px 0; flex-wrap: wrap; }
-.tag { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; background: #37485a; margin-left: 4px; }
-.tag.bye { background: #4a3b2a; }
+.back-link { display: inline-block; margin-bottom: 10px; font-size: 13px; }
+
+.draw-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin: 18px 0 4px; }
+.draw-tabs .tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  color: var(--text-muted);
+  padding: 8px 4px;
+  margin-right: 20px;
+  font-weight: 700;
+}
+.draw-tabs .tab:hover { background: transparent; color: var(--text); }
+.draw-tabs .tab.active { color: var(--clay); border-bottom-color: var(--clay); }
+
+/* ---------------------------------------------------------------------- */
+/* Buttons                                                                */
+/* ---------------------------------------------------------------------- */
+button {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--clay);
+  background: var(--clay);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+}
+button:hover { background: var(--clay-hover); border-color: var(--clay-hover); }
+button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+button.secondary {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+button.secondary:hover { background: var(--surface-alt); border-color: var(--text-faint); }
+
+button.danger {
+  background: var(--surface);
+  border-color: var(--border-strong);
+  color: var(--danger-soft-text);
+}
+button.danger:hover { background: var(--danger-soft); border-color: var(--danger); }
+
+/* ---------------------------------------------------------------------- */
+/* Forms                                                                  */
+/* ---------------------------------------------------------------------- */
+input, select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+input::placeholder { color: var(--text-faint); }
+input:focus, select:focus {
+  border-color: var(--clay);
+  box-shadow: 0 0 0 3px var(--clay-soft);
+}
+label { font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
+
+.field-hint { font-size: 12px; color: var(--text-muted); margin-top: 8px; }
+.form-error { color: var(--danger-soft-text); background: var(--danger-soft); padding: 8px 12px; border-radius: var(--radius-sm); font-size: 13px; margin-top: 10px; }
 
 .inline { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.filters { display: flex; gap: 10px; margin: 4px 0 18px; flex-wrap: wrap; }
 
-/* --- Bracket --- */
-.bracket-scroll { overflow-x: auto; padding-bottom: 16px; }
-.bracket {
-  display: flex;
-  gap: 40px;
-  align-items: flex-start;
-  min-width: max-content;
+/* ---------------------------------------------------------------------- */
+/* Cards                                                                  */
+/* ---------------------------------------------------------------------- */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 20px;
+  margin-bottom: 18px;
 }
-.bracket-round {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-around;
-  gap: 24px;
-  min-width: 190px;
+
+.callout {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0 0 18px;
 }
-.bracket-round-title {
+
+.empty-state {
   text-align: center;
-  color: #9fb0c0;
+  padding: 40px 20px;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+.empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+
+/* ---------------------------------------------------------------------- */
+/* Tables                                                                 */
+/* ---------------------------------------------------------------------- */
+.table-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 11px 16px; border-bottom: 1px solid var(--border); text-align: left; font-size: 14px; }
+thead th {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-weight: 700;
   font-size: 12px;
   text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--border);
+}
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface-alt); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.rank { font-weight: 700; color: var(--text-muted); width: 40px; }
+tr.rank-1 td.rank { color: var(--gold-soft-text); }
+
+/* Statut d'un tournoi (calcule d'apres ses matchs, voir TournamentStatus cote
+   backend) : terminé = finale jouée (vert uniforme) ; en cours = au moins un
+   resultat saisi mais pas encore de champion (chaque tournoi en cours a sa
+   propre teinte, voir colorHue - fond applique en inline style cote vue).
+   Pas de couleur = tableau pas encore commencé. */
+tbody tr.status-completed { background: var(--grass-soft); }
+tbody tr.status-completed:hover { background: var(--grass-soft); }
+
+.legend { display: flex; gap: 16px; margin: -6px 0 14px; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend-dot.status-completed { background: var(--grass); }
+
+/* ---------------------------------------------------------------------- */
+/* Classement detaille                                                    */
+/* ---------------------------------------------------------------------- */
+.nation-cell { white-space: nowrap; }
+.nation-cell .fi { margin-right: 6px; border-radius: 2px; box-shadow: 0 0 0 1px var(--border); }
+.fr-dot::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c1272d;
+  margin-right: 4px;
+}
+
+/* Joueur encore en jeu dans un tournoi pas termine (voir liveTournaments cote
+   backend) : petit point de la couleur du tournoi a cote de son nom, et fond
+   teinte sur la case ou ses points "en direct" apparaissent. */
+.live-dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  margin-left: 5px;
+  vertical-align: middle;
+}
+.live-legend-item { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-weight: 600; }
+.live-legend-item .live-dot { margin-left: 0; }
+.scroll-top { overflow-x: auto; overflow-y: hidden; margin-bottom: 4px; }
+.ranking-scroll { overflow-x: auto; }
+.ranking-table { white-space: nowrap; }
+.ranking-table th, .ranking-table td { padding: 8px 10px; }
+.ranking-table .group-header {
+  text-align: center;
+  border-left: 2px solid var(--border-strong);
+}
+.ranking-table .group-header.gs { color: var(--gold-soft-text); }
+.ranking-table .group-header.masters { color: var(--clay-soft-text); }
+.ranking-table .small-head { font-size: 10px; border-left: none; }
+.ranking-table td.player-fr { color: #c1272d; font-weight: 700; }
+.ranking-table .total-col { border-left: none; }
+.ranking-table td.total-col { background: var(--clay-soft); }
+.ranking-table th.total-col { background: var(--surface-alt); }
+
+.ranking-table .sticky-col {
+  position: sticky;
+  z-index: 2;
+  background: var(--surface);
+  box-shadow: 2px 0 0 var(--border-strong);
+}
+.ranking-table thead .sticky-col { z-index: 3; background: var(--surface-alt); }
+.ranking-table tr.rank-1 .sticky-col { background: var(--surface-alt); }
+.ranking-table td.total-col.sticky-col { background: var(--clay-soft); }
+.ranking-table .sticky-1 { left: 0; min-width: 40px; }
+.ranking-table .sticky-2 { left: 40px; min-width: 150px; }
+.ranking-table .sticky-3 { left: 190px; min-width: 100px; }
+.ranking-table .sticky-4 { left: 290px; min-width: 70px; box-shadow: 2px 0 0 var(--border-strong); }
+.ranking-table .cell-named { min-width: 90px; }
+.ranking-table .cell-named .pts { display: block; font-weight: 700; }
+.ranking-table .cell-named .name { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; white-space: normal; max-width: 100px; }
+.ranking-table .non-counted { border-left: 2px solid var(--border-strong); white-space: normal; min-width: 220px; }
+.ranking-table .non-counted .tag { margin: 2px 4px 2px 0; }
+
+/* ---------------------------------------------------------------------- */
+/* Tags / badges                                                         */
+/* ---------------------------------------------------------------------- */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  background: var(--neutral-soft);
+  color: var(--neutral-soft-text);
+  white-space: nowrap;
+}
+.tag.tag-gold { background: var(--gold-soft); color: var(--gold-soft-text); }
+.tag.tag-clay { background: var(--clay-soft); color: var(--clay-soft-text); }
+.tag.tag-grass { background: var(--grass-soft); color: var(--grass-soft-text); }
+.tag.tag-danger { background: var(--danger-soft); color: var(--danger-soft-text); }
+.tag.bye { background: var(--neutral-soft); color: var(--neutral-soft-text); }
+
+/* ---------------------------------------------------------------------- */
+/* Bracket                                                                */
+/* ---------------------------------------------------------------------- */
+.bracket-scroll { padding: 20px 4px 28px; }
+
+/* Le tableau ne doit jamais avoir de scroll horizontal : .bracket-scaled est
+   rendu a sa taille naturelle (inline-block = shrink-to-fit, necessaire pour
+   que scrollWidth reflete sa vraie largeur), puis BracketView.vue lui
+   applique un transform:scale() si besoin pour tenir dans .bracket-viewport. */
+.bracket-viewport { width: 100%; overflow: hidden; }
+.bracket-scaled { display: inline-block; }
+
+/* Vue "vrai tableau" (tableau principal) : deux moities miroir + une finale
+   au centre, reliees par des lignes de progression comme sur un vrai tableau
+   papier - voir bracketLayout.js pour le detail du calcul de geometrie. */
+.bracket-tree {
+  --match-h: 66px;
+  --round-gap: 20px;
+  --v-gap: 18px;
+  display: flex;
+  align-items: center;
+  gap: var(--round-gap);
+  padding: 24px 8px;
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(ellipse at center, var(--grass-soft) 0%, transparent 70%),
+    linear-gradient(180deg, var(--surface-alt) 0%, var(--surface) 100%);
+}
+
+/* Qualifs : chaque groupe est son propre petit arbre (pas de finale commune),
+   ils se disposent en grille et passent a la ligne pour tenir a l'ecran. */
+.bracket-groups {
+  --match-h: 66px;
+  --round-gap: 20px;
+  --v-gap: 18px;
+  --match-w: 210px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 36px;
+}
+.bracket-group {
+  padding: 18px 8px 8px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(180deg, var(--surface-alt) 0%, var(--surface) 100%);
+}
+
+.bn-node {
+  display: flex;
+  align-items: center;
+  gap: var(--round-gap);
+}
+.bn-node.mirror { flex-direction: row-reverse; }
+
+.bn-children {
+  display: flex;
+  flex-direction: column;
+  gap: var(--v-gap);
+  position: relative;
+}
+.bn-node:not(.mirror) .bn-children { align-items: flex-end; }
+.bn-node.mirror .bn-children { align-items: flex-start; }
+
+/* Barre verticale qui relie les 2 sous-tableaux enfants (calculee via
+   --conn-offset, fournie par BracketTreeNode.vue en fonction de la
+   profondeur - jamais une valeur fixe, la hauteur double a chaque tour). */
+.bn-children::before {
+  content: '';
+  position: absolute;
+  top: var(--conn-offset);
+  bottom: var(--conn-offset);
+  width: 0;
+}
+.bn-node:not(.mirror) .bn-children::before { right: 0; border-right: 2px solid var(--border-strong); }
+.bn-node.mirror .bn-children::before { left: 0; border-left: 2px solid var(--border-strong); }
+
+.bn-self { position: relative; flex: none; }
+.bn-self::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: var(--round-gap);
+  height: 2px;
+  background: var(--border-strong);
+}
+.bn-node:not(.mirror) .bn-self::before { left: calc(-1 * var(--round-gap)); }
+.bn-node.mirror .bn-self::before { left: 100%; }
+
+.bracket-final {
+  position: relative;
+  flex: none;
+}
+.bracket-final-badge {
+  position: absolute;
+  top: -26px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
   letter-spacing: 0.05em;
-  margin-bottom: 6px;
+  color: var(--gold-soft-text);
+  background: var(--gold-soft);
+  padding: 3px 10px;
+  border-radius: 999px;
 }
+.bracket-final .bracket-match { border-color: var(--gold); box-shadow: 0 0 0 3px var(--gold-soft); }
+.bracket-final::before,
+.bracket-final::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  width: var(--round-gap);
+  height: 2px;
+  background: var(--border-strong);
+}
+.bracket-final::before { right: 100%; }
+.bracket-final::after { left: 100%; }
+
 .bracket-match {
-  border: 1px solid #2a3644;
-  border-radius: 6px;
-  background: #1a2330;
-  overflow: hidden;
-  font-size: 13px;
-  cursor: pointer;
+  position: relative;
+  width: var(--match-w, 210px);
+  height: var(--match-h, 66px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  overflow: visible;
+  font-size: 13.5px;
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
 }
-.bracket-match:hover { border-color: #2b6cb0; }
-.bracket-match.completed { border-color: #2f7a4f; }
+.bracket-match.clickable { cursor: pointer; }
+.bracket-match.clickable:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); border-left-color: var(--clay); }
+.bracket-match.completed { border-left-color: var(--grass); }
+
+.bm-round-tag {
+  position: absolute;
+  top: -9px;
+  left: 8px;
+  z-index: 1;
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+.bm-round-tag .pts { color: var(--clay); font-weight: 800; }
+.bm-round-tag-qualifier { background: var(--grass-soft); border-color: var(--grass); color: var(--grass-soft-text); }
+
 .bracket-slot {
+  position: relative;
   display: flex;
   justify-content: space-between;
-  padding: 5px 8px;
-  border-bottom: 1px solid #2a3644;
+  align-items: center;
+  gap: 5px;
+  padding: 0 8px;
+  flex: 1 1 0;
+  min-height: 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
 }
-.bracket-slot:last-child { border-bottom: none; }
-.bracket-slot.winner { background: #1f3a2b; font-weight: 600; }
-.bracket-slot .name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 130px; }
-.bracket-slot .seed { color: #9fb0c0; margin-right: 4px; }
-.score-editor { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
-.score-editor .card { width: 360px; }
+/* Reserve la place du bouton de retrait (position absolue) pour qu'il ne
+   recouvre jamais les badges (seed/WC/Q...) du meme slot. */
+.bracket-slot:has(.slot-remove) { padding-right: 26px; }
+.bracket-slot + .bracket-slot { border-bottom: none; }
+.bracket-slot.winner { background: var(--grass-soft); font-weight: 700; color: var(--grass-soft-text); }
+.bracket-slot .name { flex: 1 1 auto; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bracket-slot .fi-slot { display: inline-flex; width: 16px; margin-right: 3px; flex: none; }
+.bracket-slot .fi { border-radius: 1px; flex: none; }
+.bracket-slot .badges { display: flex; gap: 3px; flex: none; }
+.bracket-slot .tag-seed { background: var(--neutral-soft); color: var(--text-muted); min-width: 16px; text-align: center; }
+
+/* Numero de position dans le tableau (1er tour seulement - c'est la qu'on
+   place les entrees) : aide a savoir quel numero taper dans le formulaire
+   "Ajouter au tableau" sans avoir a compter les cases. */
+.slot-pos {
+  flex: none;
+  width: 14px;
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-faint);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+/* Petit bouton de retrait directement sur l'entree concernee, plutot qu'une
+   liste separee qui doublerait tout le contenu deja affiche par le tableau.
+   Position absolue : ne mange pas de place sur le nom du joueur. Toujours
+   visible (en discret) plutot qu'au survol uniquement - une cible de 15px
+   qui n'apparait qu'au survol precis s'est averee ratee trop souvent en
+   usage reel (Charles : "ca ne fait rien, ca me renvoie au score"). */
+.slot-remove {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: 0 0 0 1px var(--border);
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 700;
+  opacity: 0.55;
+}
+.bracket-slot:hover .slot-remove { opacity: 1; }
+.slot-remove:hover { background: var(--danger-soft); color: var(--danger-soft-text); box-shadow: 0 0 0 1px var(--danger); opacity: 1; }
+
+.bracket-score {
+  flex: none;
+  height: 16px;
+  line-height: 16px;
+  padding: 0 10px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  background: var(--surface-alt);
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Modal                                                                  */
+/* ---------------------------------------------------------------------- */
+.score-editor {
+  position: fixed;
+  inset: 0;
+  background: rgba(43, 36, 26, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  padding: 16px;
+}
+.score-editor .card { width: 380px; box-shadow: var(--shadow-md); margin-bottom: 0; }
+.score-editor h3 { text-transform: none; color: var(--text); font-size: 17px; margin-bottom: 12px; }
+.score-editor .matchup { color: var(--text-muted); margin-bottom: 14px; font-size: 14px; }
+.score-editor label { display: flex; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; }
+.score-editor label:has(input:checked) { border-color: var(--grass); background: var(--grass-soft); }
+.score-editor input[type="text"], .score-editor input:not([type="radio"]) { width: 100%; margin-bottom: 12px; }
+
+/* ---------------------------------------------------------------------- */
+/* Responsive                                                             */
+/* ---------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .topbar { flex-wrap: wrap; padding: 10px 16px; }
+  main { padding: 16px; }
+  th, td { padding: 9px 10px; }
+}

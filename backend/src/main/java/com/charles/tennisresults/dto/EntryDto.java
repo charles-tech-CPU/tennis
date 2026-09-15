@@ -8,6 +8,7 @@ public record EntryDto(
         Long playerId,
         String playerLastName,
         String playerFirstName,
+        String playerNationality,
         Integer drawPosition,
         Integer seed,
         EntryType entryType,

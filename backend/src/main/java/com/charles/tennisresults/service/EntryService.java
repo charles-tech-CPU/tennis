@@ -31,6 +31,7 @@ public class EntryService {
         this.bracketService = bracketService;
     }
 
+    @Transactional(readOnly = true)
     public List<EntryDto> findByTournament(Long tournamentId) {
         return entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId).stream()
                 .sorted(Comparator.comparing(Entry::getDrawPosition))
@@ -69,6 +70,7 @@ public class EntryService {
         Entry entry = entryRepository.findById(entryId)
                 .orElseThrow(() -> new EntityNotFoundException("Entree introuvable: " + entryId));
         Long tournamentId = entry.getTournament().getId();
+        bracketService.clearEntryFromMatches(entry);
         entryRepository.delete(entry);
         bracketService.syncRound1FromEntries(tournamentId);
     }
@@ -79,6 +81,7 @@ public class EntryService {
                 e.getPlayer() != null ? e.getPlayer().getId() : null,
                 e.getPlayer() != null ? e.getPlayer().getLastName() : (e.isBye() ? "BYE" : null),
                 e.getPlayer() != null ? e.getPlayer().getFirstName() : null,
+                e.getPlayer() != null ? e.getPlayer().getNationality() : null,
                 e.getDrawPosition(), e.getSeed(), e.getEntryType(), e.isBye()
         );
     }

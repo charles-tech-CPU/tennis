@@ -18,6 +18,11 @@ public record TournamentDto(
         Integer qualifyingRound1Points,
         Integer qualifyingRound2Points,
         Integer runnerUpPoints,
-        List<RoundPointsDto> rounds
+        List<RoundPointsDto> rounds,
+        boolean qualifying,
+        Long mainTournamentId,
+        Long qualifyingTournamentId,
+        TournamentStatus status,
+        Integer colorHue
 ) {
 }

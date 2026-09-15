@@ -24,6 +24,15 @@ export default {
   createTournament(payload) {
     return client.post('/tournaments', payload).then(r => r.data)
   },
+  updateTournament(id, payload) {
+    return client.put(`/tournaments/${id}`, payload).then(r => r.data)
+  },
+  deleteTournament(id) {
+    return client.delete(`/tournaments/${id}`)
+  },
+  createQualifyingDraw(id, payload) {
+    return client.post(`/tournaments/${id}/qualifying`, payload).then(r => r.data)
+  },
 
   // Entrees (tableau)
   getEntries(tournamentId) {

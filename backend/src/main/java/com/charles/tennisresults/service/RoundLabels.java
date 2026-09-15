@@ -33,4 +33,9 @@ public final class RoundLabels {
         }
         return "R" + (1 << (remaining + 1));
     }
+
+    /** Libelle d'un tour de qualification (roundOrder 1-based) : "Q1", "Q2"... */
+    public static String qualifyingLabelFor(int roundOrder) {
+        return "Q" + roundOrder;
+    }
 }

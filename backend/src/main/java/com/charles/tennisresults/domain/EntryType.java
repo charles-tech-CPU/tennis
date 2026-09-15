@@ -5,5 +5,8 @@ public enum EntryType {
     DIRECT,
     WILD_CARD,
     QUALIFIER,
-    LUCKY_LOSER
+    LUCKY_LOSER,
+    ALTERNATE,
+    NEW_GENERATION,
+    SPECIAL_EXEMPT
 }

@@ -33,7 +33,17 @@ public class BracketService {
     /** Cree tous les matchs (vides) du tournoi, du 1er tour a la finale. */
     @Transactional
     public void initializeSkeleton(Tournament tournament, int drawSlots) {
-        int totalRounds = RoundLabels.roundCount(drawSlots);
+        initializeSkeleton(tournament, drawSlots, RoundLabels.roundCount(drawSlots));
+    }
+
+    /**
+     * Variante avec un nombre de tours explicite, plus petit que
+     * roundCount(drawSlots) : utilisee pour un tableau de qualifications, qui
+     * s'arrete volontairement avant la finale (plusieurs "vainqueurs de tour"
+     * simultanes = les qualifies, chacun dans son groupe independant).
+     */
+    @Transactional
+    public void initializeSkeleton(Tournament tournament, int drawSlots, int totalRounds) {
         for (int round = 1; round <= totalRounds; round++) {
             int matchesInRound = drawSlots >> round; // round=1 -> drawSlots/2 matchs
             for (int pos = 1; pos <= matchesInRound; pos++) {
@@ -57,8 +67,12 @@ public class BracketService {
         Tournament tournament = tournamentRepository.findById(tournamentId)
                 .orElseThrow(() -> new EntityNotFoundException("Tournoi introuvable: " + tournamentId));
         List<Entry> entries = entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId);
-        int maxPosition = entries.stream().mapToInt(Entry::getDrawPosition).max().orElse(0);
-        int drawSlots = RoundLabels.nextPowerOfTwo(Math.max(2, maxPosition));
+        // Un tableau de qualifications garde sa taille reelle (groupes de 4, pas de
+        // "byes" pour completer jusqu'a la puissance de 2 superieure) ; seul le
+        // tableau principal arrondit au plus proche 2^n avec des byes.
+        int drawSlots = tournament.isQualifying()
+                ? tournament.getDrawSize()
+                : RoundLabels.nextPowerOfTwo(Math.max(2, entries.stream().mapToInt(Entry::getDrawPosition).max().orElse(0)));
 
         for (int pos = 1; pos * 2 <= drawSlots; pos++) {
             int posA = pos * 2 - 1;
@@ -69,13 +83,14 @@ public class BracketService {
             // Les matchs du 1er tour sont normalement deja tous crees par
             // initializeSkeleton a la creation du tournoi ; ce fallback ne sert que
             // si le tableau a ete elargi depuis (securite, ne devrait pas arriver en v1).
+            int currentPos = pos;
             Match match = matchRepository
                     .findByTournamentIdAndRoundOrderAndPositionInRound(tournamentId, 1, pos)
                     .orElseGet(() -> {
                         Match m = new Match();
                         m.setTournament(tournament);
                         m.setRoundOrder(1);
-                        m.setPositionInRound(pos);
+                        m.setPositionInRound(currentPos);
                         m.setStatus(MatchStatus.PENDING);
                         return m;
                     });
@@ -163,5 +178,32 @@ public class BracketService {
         }
         parent.setStatus(MatchStatus.PENDING);
         matchRepository.save(parent);
+    }
+
+    /**
+     * Retire une entree de tous les matchs qui la referencent : a appeler
+     * AVANT de supprimer l'entree elle-meme (la table match_entry a une cle
+     * etrangere vers entry, sans cascade - sans ca, la suppression echoue).
+     * Si l'entree avait deja gagne un match, annule d'abord en cascade tout
+     * ce qui en decoulait plus loin dans le tableau (resetDownstream), pour
+     * ne jamais laisser un tour suivant referencer un resultat perime.
+     */
+    @Transactional
+    public void clearEntryFromMatches(Entry entry) {
+        for (Match match : matchRepository.findByEntry1_IdOrEntry2_Id(entry.getId(), entry.getId())) {
+            if (match.getStatus() == MatchStatus.COMPLETED || match.getStatus() == MatchStatus.BYE) {
+                resetDownstream(match);
+                match.setScore(null);
+                match.setWinnerEntry(null);
+            }
+            if (match.getEntry1() != null && match.getEntry1().getId().equals(entry.getId())) {
+                match.setEntry1(null);
+            }
+            if (match.getEntry2() != null && match.getEntry2().getId().equals(entry.getId())) {
+                match.setEntry2(null);
+            }
+            match.setStatus(MatchStatus.PENDING);
+            matchRepository.save(match);
+        }
     }
 }

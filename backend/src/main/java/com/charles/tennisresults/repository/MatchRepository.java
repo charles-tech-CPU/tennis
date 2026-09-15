@@ -1,6 +1,7 @@
 package com.charles.tennisresults.repository;
 
 import com.charles.tennisresults.domain.Match;
+import com.charles.tennisresults.domain.MatchStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
@@ -14,4 +15,6 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
             Long tournamentId, Integer roundOrder, Integer positionInRound);
 
     List<Match> findByEntry1_IdOrEntry2_Id(Long entry1Id, Long entry2Id);
+
+    List<Match> findByTournament_IdInAndStatusIn(List<Long> tournamentIds, List<MatchStatus> statuses);
 }

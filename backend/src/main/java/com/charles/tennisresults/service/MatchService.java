@@ -29,6 +29,7 @@ public class MatchService {
         this.bracketService = bracketService;
     }
 
+    @Transactional(readOnly = true)
     public List<MatchDto> findByTournament(Long tournamentId) {
         Map<Integer, String> labels = tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(tournamentId)
                 .stream().collect(Collectors.toMap(r -> r.getRoundOrder(), r -> r.getRoundLabel()));
@@ -102,6 +103,7 @@ public class MatchService {
                 e.getPlayer() != null ? e.getPlayer().getId() : null,
                 e.getPlayer() != null ? e.getPlayer().getLastName() : (e.isBye() ? "BYE" : null),
                 e.getPlayer() != null ? e.getPlayer().getFirstName() : null,
+                e.getPlayer() != null ? e.getPlayer().getNationality() : null,
                 e.getDrawPosition(),
                 e.getSeed(),
                 e.getEntryType(),

@@ -156,12 +156,19 @@ def main():
         total = ws.cell(row=r, column=5).value
         if not last_name:
             continue
+        player_id = r - 2
         out.append(
             f"INSERT INTO player (id, last_name, first_name, nationality, legacy_snapshot_points) "
-            f"VALUES ({r - 2}, {sql_str(last_name)}, {sql_str(first_name)}, {sql_str(nation)}, {sql_int(total)});"
+            f"VALUES ({player_id}, {sql_str(last_name)}, {sql_str(first_name)}, {sql_str(nation)}, {sql_int(total)});"
         )
         player_count += 1
-    out.append(f"SELECT setval('player_id_seq', {player_count});")
+        max_player_id = player_id
+    # Les ids suivent le numero de ligne Excel, pas le nombre de joueurs importes :
+    # une ligne "nom" vide au milieu du fichier cree un id non contigu superieur a
+    # player_count. Resynchroniser sur player_count (au lieu du vrai max id) a
+    # cause un bug de cle dupliquee des la creation du joueur suivant depuis
+    # l'application - voir V5__fix_player_sequence.sql.
+    out.append(f"SELECT setval('player_id_seq', {max_player_id});")
 
     # ---------- Tournois (feuille calendrier) ----------
     ws = wb["CALENDRIER ATP 2026"]

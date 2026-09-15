@@ -6,9 +6,9 @@ import RankingView from '../views/RankingView.vue'
 
 const routes = [
   { path: '/', component: TournamentsView },
-  { path: '/tournaments/:id', component: TournamentDetailView, props: true },
+  { path: '/tournaments/:id', component: TournamentDetailView, props: true, meta: { wide: true } },
   { path: '/players', component: PlayersView },
-  { path: '/ranking', component: RankingView }
+  { path: '/ranking', component: RankingView, meta: { wide: true } }
 ]
 
 export default createRouter({

@@ -163,15 +163,192 @@ changements ulterieurs plutot que de modifier `V2` apres coup.
 
 ## 8. Pistes d'evolution (hors v1)
 
-- Ecran de modification d'un tournoi deja cree (nom, categorie, bareme de points).
 - Tirage automatique des tetes de serie (positions "protegees" officielles).
-- Tableau de qualification a part (actuellement seulement 2 points informatifs).
-- Import assiste (semi-automatique, avec relecture obligatoire) des tournois
-  passes depuis les feuilles de semaine, si tu veux un jour retenter le sujet -
-  possible en decoupant le travail tournoi par tournoi plutot qu'en un seul script
-  generique.
 - Historique du classement (courbe semaine par semaine) plutot qu'une seule vue
   "instantanee".
+- United Cup (semaine 1) : format par equipes (pays vs pays, simple + double,
+  ATP + WTA melanges) - ne rentre pas dans le modele "tableau individuel a
+  elimination directe" de l'appli. Laisse de cote pour l'instant, a rediscuter
+  si tu veux vraiment le suivre (probablement un modele de donnees a part).
+
+~~Ecran de modification d'un tournoi deja cree~~ et ~~tableau de qualification a
+part~~ : faits, voir section 2 et section 9.
+
+## 9. Suivi d'avancement - import des resultats semaine par semaine
+
+Charles a demande une memoire ecrite de cet avancement, relisible en debut de
+session suivante ("lis le README et fais ce qu'il y a a faire pour la semaine
+suivante").
+
+### Fait au-dela du scaffold initial (v1 → maintenant)
+
+- **Design** repris integralement (palette terre battue/gazon, cartes, tableaux,
+  bracket, formulaires) - voir `frontend/src/style.css`.
+- **Ecran de gestion d'un tournoi** : pays, semaine, case obligatoire, points de
+  qualification, points du finaliste battu, bareme par tour, tous modifiables
+  apres creation (`PUT /api/tournaments/{id}`, panneau "Modifier les reglages"
+  sur la page tournoi). Nom/categorie/saison/taille du tableau restent figes.
+- **Tableau de qualifications** : modelise comme un tournoi lie
+  (`tournament.is_qualifying` + `tournament.main_tournament_id`), pas une
+  structure de donnees a part - reutilise tel quel tout le moteur de bracket
+  existant (creation, entrees, scores, avancement automatique). Onglets
+  "Tableau principal" / "Qualifs" sur la page tournoi. Cree via
+  `POST /api/tournaments/{id}/qualifying`. Les points de qualif et du tournoi
+  principal se **fusionnent automatiquement** dans le classement (meme tournoi).
+- **Classement detaille** façon Excel : colonnes Grand Chelem / ATP Finals /
+  Masters 1000 / Monte-Carlo / 5 meilleurs autres tournois (nommes) /
+  remplacement / total / non-comptabilises. Drapeaux (package `flag-icons`,
+  PAS des emoji - illisibles sur Windows) a cote des nationalites, dans le
+  classement, la page Joueurs et le bracket.
+- **Bugs corriges au passage** (pas lies a l'import, auraient plante n'importe
+  quel usage normal de l'appli des qu'un tableau contient de vraies donnees) :
+  - `LazyInitializationException` sur `GET .../entries`, `GET .../matches`,
+    `GET /api/ranking` (services pas annotes `@Transactional`).
+  - Mapping JPA `qualifyingRound1Points`/`2` vers de mauvaises colonnes SQL.
+  - `RankingService.pointsEarned()` supposait une seule "finale" (mauvais pour
+    un tableau de qualifs, ou plusieurs groupes independants produisent chacun
+    un "vainqueur de tour" simultanement) - corrige.
+  - Sequence Postgres `player_id_seq` desynchronisee (le script d'import
+    resynchronisait sur le *nombre* de joueurs importes au lieu du plus grand id
+    reellement utilise - une ligne Excel sautee suffit a les desaligner) - fixe
+    en base et dans `import/import_excel.py` (voir `V5__fix_player_sequence.sql`).
+
+### La methode de lecture des feuilles hebdomadaires (important a relire)
+
+Chaque feuille hebdo (`1` a `48` dans le classeur) empile plusieurs tournois
+verticalement, dans des blocs de colonnes de largeur fixe. Le format est
+**toujours le meme** une fois qu'on a repere, pour un tournoi donne, sa ligne
+d'en-tete (`header_row`) et sa colonne de base `X` (= colonne du "tag" du
+premier joueur, tout a gauche du bloc) :
+
+- `X` = colonne tag joueur 1 (seed/WC/Q/LL), `X+1` = nom joueur 1 (colonne
+  "ronde 0"), `X+1+r` = resultat du tour `r` **cote gauche**, r=1..3 seulement
+  (R32,R16,QF ; groupes de taille `2^r`, le nom du vainqueur est ecrit a la
+  ligne `groupe_top + 2^(r-1) - 1` et le score a la ligne `groupe_top + 2^(r-1)`).
+- **La demi-finale de chaque cote est EMBARQUEE dans sa propre colonne QF**,
+  pas dans une colonne dediee : cote gauche -> colonne `X+4` (la meme que le
+  tour 3), a la ligne du milieu du demi-tableau complet (`start_row+7` pour un
+  demi-tableau de 16 lignes) ; cote droit -> colonne `X+6` (sa propre colonne
+  QF), meme ligne du milieu.
+- Cote droit (mirroir) : `X+9` = nom, `X+10` = tag, `X+9-r` = resultat du tour
+  `r` (r=1..3, QF a `X+6`).
+- **La vraie finale (tour 5) occupe la colonne CENTRALE `X+5`**, isolee entre
+  les deux moities QF (`X+4` et `X+6`), a la meme ligne du milieu. Elle EST
+  presente dans la grille - contrairement a une premiere conclusion erronee,
+  ce n'est pas une case manquante, juste une case que j'avais mal identifiee
+  comme "demi-finale gauche" avant que Charles ne corrige (Brisbane : E10 =
+  score demi gauche, F10 = score finale). Voir `decode_bracket.py`,
+  `decode_main_draw()`, cle `'final'` du dict retourne.
+- Qualifs : `X+12` = tag, `X+13` = nom (avec le texte `"QUALIF"` a cote sur la
+  ligne d'en-tete), `X+14`/`X+15` = tours 1/2. Taille variable (12, 16, 24...) -
+  **toujours detecter dynamiquement** (premiere ligne vide = fin du tirage), ne
+  jamais supposer une taille fixe.
+- **Barème de points : decale d'un cran par rapport aux entetes Excel** - voir
+  section "Semaine 1 : etat" plus bas, point 1. Ne pas prendre les valeurs de
+  l'entete telles quelles.
+- Outils reutilisables : `import/weekly_results/decode_bracket.py` (fonctions
+  `decode_main_draw`/`decode_qualifying` + `find header_rows` en CLI pour
+  reperer les lignes d'en-tete d'une feuille) et
+  `import/weekly_results/push_generic.py` (pousse entrees + scores vers l'API
+  une fois les `(nom, feuille, header_row, X, id_tournoi_en_base, dernier_tour_fiable)`
+  identifies). Verifie TOUJOURS l'absence d'anomalie (un "vainqueur" qui
+  n'appartient a aucune des deux moitiés) avant de pousser - ça a permis de
+  detecter le probleme de la vraie finale plutot que de pousser des donnees
+  fausses.
+
+### Semaine 1 : etat (complet, corrige)
+
+Tous les tournois de la semaine 1 sont crees et **complets** (tours 1 a 5,
+qualifs incluses), barème de points corrige. Un seul trou reel, une donnee
+absente du fichier Excel lui-meme (pas un bug de lecture) :
+
+| Tournoi | id | Etat |
+|---|---|---|
+| Brisbane | 3 | complet |
+| Canberra | 4 | complet |
+| Bangalore | 5 | complet |
+| Hong Kong | 2 | complet |
+| Noumea | 6 | complet |
+| Nonthaburi 1 | 7 | complet sauf 1 score de quali (Q2, Weber vs Colson - absent du fichier) |
+| Nottingham | 8 | complet |
+| United Cup | 1 | rien - format different, voir section 8 |
+
+**Deux corrections importantes faites apres coup (a bien relire avant de
+continuer une semaine suivante), suite a un retour detaille de Charles :**
+
+1. **Barème de points decale d'un cran.** La valeur imprimee sous l'entete
+   Excel "R32" n'est PAS le nombre de points pour une elimination au 1er tour
+   (R32) - c'est le nombre de points pour une elimination au tour SUIVANT
+   (R16). Le vrai mapping : R32 (1er tour) = **toujours 0**, et la derniere
+   valeur imprimee ("F" dans Excel) = points du **finaliste battu**
+   (`runnerUpPoints`), pas du tour F lui-meme. Exemple Brisbane : Excel
+   affiche `25/50/100/165/250` sous R32/R16/QF/SF/F -> le vrai bareme est
+   `rounds=[0,25,50,100,250]` (R32,R16,QF,SF,W) + `runnerUpPoints=165`. Meme
+   decalage pour les qualifs : Excel affiche `Q1=x/Q2=y` -> vrai bareme
+   `rounds=[0,y]` + `runnerUpPoints=x`. **Applique aux 7 tournois + 7 qualifs
+   de la semaine 1** (`import/weekly_results/week1_fix_points.py` - garde a
+   titre d'exemple de methode, pas directement relancable pour une autre
+   semaine sans changer les ids).
+2. **Colonne demi-finale/finale inversee.** Contrairement a ce qui est ecrit
+   plus bas ("le tour 4 gauche reutilise la colonne QF"), la VRAIE regle est :
+   - Colonne QF (`X+4`) porte AUSSI la demi-finale du cote gauche, embarquee a
+     la ligne du milieu (comme deja documente).
+   - Colonne QF miroir (`X+6`) porte AUSSI la demi-finale du cote droit, meme
+     principe (deja documente, ca c'etait juste).
+   - **La colonne centrale `X+5` (celle que je prenais a tort pour "la
+     demi-finale gauche") est en fait la VRAIE FINALE**, toujours presente
+     dans la grille (contrairement a ce qui avait ete conclu au debut - elle
+     n'est pas absente, juste mal etiquetee). Exemple Brisbane : E10 (`X+4`,
+     ligne du milieu) = score demi-finale gauche, F10 (`X+5`) = score de la
+     finale. `decode_bracket.py` est corrige en consequence (fonction
+     `decode_main_draw`, cle `'final'` du dict retourne).
+3. Un bug annexe trouve en corrigeant les qualifs de Brisbane :
+   `BracketService.syncRound1FromEntries` recalculait la taille du tableau
+   via `nextPowerOfTwo(maxPosition)` (correct pour un tableau principal, FAUX
+   pour des qualifs dont la taille reelle n'est pas une puissance de 2, ex.
+   24 ou 12) - creait des matchs fantomes vides des qu'on ajoutait un joueur.
+   Corrige (utilise `tournament.getDrawSize()` tel quel si `isQualifying()`).
+4. **Les qualifs a 12 joueurs (bloc1 seul) etaient incompletes.** Quand le
+   tableau principal a 6 cases "Q" mais que le bloc de qualifs `X+12..X+15`
+   ne fait que 12 joueurs (3 groupes de 4 = 3 qualifies, pas 6), il existe un
+   **second bloc de qualifs** un peu plus loin sur la meme feuille, colonnes
+   `X+17` (tag) / `X+18` (nom) / `X+19` (tour 1) / `X+20` (tour 2) - meme
+   structure, MEME bareme de points que le bloc 1 (pas d'entete "QUALIF"
+   separe - Charles a confirme : `X+13`=`X+18`, `X+14`=`X+19`, `X+15`=`X+20`).
+   Les deux blocs se combinent en un seul tableau de qualifs de 24 joueurs
+   (positions 1-12 = bloc1, 13-24 = bloc2). **Toujours verifier le nombre de
+   "Q" dans le tableau principal contre le nombre de qualifies produits** avant
+   de considerer un tableau de qualifs comme complet (`decode_bracket.py`
+   `decode_qualifying()` ne lit qu'un seul bloc - appeler deux fois avec
+   `X+12` puis `X+17` et combiner, voir `fix_qualifs_block2.py` dans
+   `import/weekly_results/` pour la methode complete, conservee cette fois).
+
+Quelques joueurs absents du snapshot Excel ont ete crees a la volee (nom
+seul, pas de prenom/nationalite au depart). **Avant de les creer, chercher une
+faute de frappe** (les noms des feuilles hebdo different souvent legerement de
+la feuille "ATP" - Charles a confirme que c'est systematique, ex.
+`MATSUDA RUYKI` -> `MATSUDA/RYUKI`, `HARRIS LL` -> `HARRIS/LLOYD` ; utiliser
+`difflib.get_close_matches` sur `NOM PRENOM` de la feuille ATP, cutoff ~0.55-0.6).
+**Si un vrai nouveau joueur (elimine au 1er tour, jamais classe donc absent de
+la feuille ATP) et que sa nationalite reste inconnue apres recherche : mettre
+la nationalite du PAYS DU TOURNOI** ou il a joue (ex. tous les joueurs non
+identifies de Bangalore -> `INDE`, Hong Kong -> `HONG KONG`, Nouvelle-Caledonie/
+Noumea -> `FRANCE`, Canberra -> `AUSTRALIE`, Nonthaburi -> `THAILANDE`) - regle
+donnee explicitement par Charles, ne pas laisser `nationality` a `NULL` (pas de
+drapeau sinon). Quelques homonymes (ex: MARTINEZ a Bangalore, 4 candidats) ont
+ete resolus en prenant le premier match sans verification individuelle - a
+auditer si un classement parait bizarre.
+
+### Pour reprendre (semaine 2 ou finir la semaine 1)
+
+1. Si tu as les scores manquants de la semaine 1 (tableau ci-dessus), donne-les
+   moi, je les saisis directement.
+2. Pour la semaine 2 : ouvrir `20260914TENNIS 2026.xlsx`, feuille `2`, lancer
+   `python decode_bracket.py find 2` pour reperer les lignes d'en-tete de
+   chaque tournoi (colonne B et colonne T), puis `decode_bracket.py show 2
+   <header_row> <X>` pour previsualiser chaque tournoi avant de le pousser via
+   `push_generic.py` (dupliquer sa liste `jobs`). Verifier les anomalies
+   avant de pousser, comme pour la semaine 1.
 
 ## Structure du repo
 
@@ -180,5 +357,6 @@ tennis-results/
 ├── backend/    Spring Boot (Java 21, Maven, PostgreSQL, Flyway)
 ├── frontend/   Vue 3 + Vite (avec le composant BracketView pour le tableau visuel)
 ├── import/     Script Python de conversion Excel → SQL
+│   └── weekly_results/   Decodage + import des feuilles hebdo (voir section 9)
 └── README.md
 ```
