@@ -16,11 +16,27 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Calcule automatiquement le classement de chaque joueur pour une saison, en
+ * Calcule automatiquement le classement glissant de chaque joueur, en
  * reproduisant la logique de la formule Excel de Charles :
  *   total = (4 Grand Chelem + ATP Finals + 8 des 9 Masters 1000, hors Monte-Carlo)
  *         + (somme des 5 meilleurs "autres" tournois)
  *         + max(points a Monte-Carlo, 6e meilleur "autre" tournoi)
+ *
+ * Le classement n'est plus fige par saison (annee civile) : il est glissant,
+ * comme le vrai classement ATP sur 52 semaines. Pour chaque tournoi RECURRENT
+ * (identifie par sa case obligatoire - Grand Chelem/Masters 1000 - ou par son
+ * nom + numero de semaine ATP pour les autres), seule l'edition (saison) la
+ * plus recente qui a REELLEMENT commence (au moins un match COMPLETED/BYE,
+ * tableau principal ou qualifs) compte - l'edition de l'annee precedente est
+ * alors automatiquement exclue. Tant que l'edition de la nouvelle saison n'a
+ * pas commence, celle de l'an dernier reste comptee. Voir
+ * {@link #activeTournamentIds} : identifier par le NOM seul aurait ete faux
+ * (plusieurs tournois differents peuvent partager un nom, ex. "MADRID" ATP75
+ * une semaine et Madrid Masters 1000 une autre, ou "NOTTINGHAM" deux fois la
+ * meme saison a des semaines differentes) - la case obligatoire (stable d'une
+ * annee sur l'autre meme si la semaine calendaire bouge un peu, ex. Shanghai)
+ * est le seul identifiant fiable pour les 14 cases, le nom+semaine sert de
+ * repli pour tout le reste.
  *
  * Seuls les matchs COMPLETED/BYE comptent - jamais de resultat devine. Mais un
  * joueur qui a deja gagne son dernier tour joue (tournoi encore en cours) est
@@ -54,18 +70,70 @@ public class RankingService {
     private record EntryOutcome(int points, boolean stillAlive) {
     }
 
+    /**
+     * Parmi toutes les editions (saisons) d'un meme tournoi RECURRENT, ne
+     * retient que celle qui compte reellement dans le classement glissant :
+     * la plus recente a avoir commence, sinon (si elle n'a pas encore
+     * commence) la precedente.
+     *
+     * Identite d'un tournoi recurrent : sa case obligatoire (
+     * {@link MandatorySlot}) si elle en a une - stable d'une saison a l'autre
+     * meme si la semaine calendaire bouge legerement (ex. Shanghai) - sinon
+     * son nom + son numero de semaine ATP (deux tournois differents peuvent
+     * partager un nom sans etre le meme evenement, ex. "MADRID" ATP75 semaine
+     * 14 vs Madrid Masters 1000 semaine 17 ; ou le meme nom peut designer deux
+     * evenements distincts la meme saison a des semaines differentes, ex.
+     * "NOTTINGHAM" ATP50 semaine 1 puis ATP125 semaine 25 - le numero de
+     * semaine les distingue). Bug trouve par Charles (2026-09-16) : grouper
+     * par semaine seule regroupait a tort tous les tournois SIMULTANES d'une
+     * meme semaine (5 a 13 tournois differents chaque semaine en temps normal)
+     * et n'en gardait qu'un seul, faisant disparaitre la plupart des joueurs
+     * du classement.
+     */
+    private Set<Long> activeTournamentIds(List<Tournament> allMains, TournamentProgress progress) {
+        Map<String, List<Tournament>> byIdentity = new HashMap<>();
+        for (Tournament t : allMains) {
+            String key = t.getMandatorySlot() != null
+                    ? "SLOT:" + t.getMandatorySlot()
+                    : "NAME_WEEK:" + t.getName().trim().toUpperCase() + "@"
+                            + (t.getWeekNumber() != null ? t.getWeekNumber() : "id" + t.getId());
+            byIdentity.computeIfAbsent(key, k -> new ArrayList<>()).add(t);
+        }
+
+        Set<Long> active = new HashSet<>();
+        for (List<Tournament> group : byIdentity.values()) {
+            List<Tournament> byRecentSeasonFirst = group.stream()
+                    .sorted(Comparator.comparing(Tournament::getSeason).reversed())
+                    .toList();
+            Tournament chosen = byRecentSeasonFirst.stream()
+                    .filter(t -> progress.statusOf(t) != TournamentStatus.NOT_STARTED)
+                    .findFirst()
+                    .orElse(byRecentSeasonFirst.get(0));
+            active.add(chosen.getId());
+        }
+        return active;
+    }
+
     @Transactional(readOnly = true)
-    public List<RankingRowDto> computeRanking(int season) {
-        List<Entry> entries = entryRepository.findByTournament_SeasonAndPlayerIsNotNull(season);
-        Map<Long, Tournament> tournamentsById = tournamentRepository.findBySeason(season).stream()
+    public List<RankingRowDto> computeRanking() {
+        Map<Long, Tournament> tournamentsById = tournamentRepository.findAll().stream()
                 .collect(Collectors.toMap(Tournament::getId, t -> t));
 
-        // Portee globale (toutes saisons, pas juste celle-ci) pour que la teinte
-        // d'un tournoi en cours soit EXACTEMENT la meme que dans la liste des
-        // tournois - le calcul doit porter sur le meme ensemble des deux cotes.
-        List<Tournament> allMains = tournamentRepository.findAll().stream().filter(t -> !t.isQualifying()).toList();
+        List<Tournament> allMains = tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, allMains);
         Map<Long, Integer> hueByTournamentId = progress.hueByTournamentId(allMains);
+
+        Set<Long> activeTournamentIds = activeTournamentIds(allMains, progress);
+
+        List<Entry> entries = entryRepository.findByPlayerIsNotNull().stream()
+                .filter(entry -> {
+                    Tournament t = entry.getTournament();
+                    Tournament effective = t.isQualifying()
+                            ? tournamentsById.getOrDefault(t.getMainTournamentId(), t)
+                            : t;
+                    return activeTournamentIds.contains(effective.getId());
+                })
+                .toList();
 
         Map<Player, List<Entry>> byPlayer = entries.stream()
                 .collect(Collectors.groupingBy(Entry::getPlayer));

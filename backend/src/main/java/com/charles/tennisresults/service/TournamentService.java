@@ -1,5 +1,7 @@
 package com.charles.tennisresults.service;
 
+import com.charles.tennisresults.domain.Match;
+import com.charles.tennisresults.domain.MatchStatus;
 import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.domain.TournamentRound;
@@ -9,6 +11,7 @@ import com.charles.tennisresults.dto.TournamentCreateDto;
 import com.charles.tennisresults.dto.TournamentDto;
 import com.charles.tennisresults.dto.TournamentStatus;
 import com.charles.tennisresults.dto.TournamentUpdateDto;
+import com.charles.tennisresults.dto.TournamentWinnerDto;
 import com.charles.tennisresults.repository.EntryRepository;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
@@ -17,6 +20,7 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +46,7 @@ public class TournamentService {
         this.bracketService = bracketService;
     }
 
+    @Transactional(readOnly = true)
     public List<TournamentDto> findAll() {
         List<Tournament> tournaments = tournamentRepository.findAll().stream()
                 .filter(t -> !t.isQualifying())
@@ -53,14 +58,19 @@ public class TournamentService {
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, tournaments);
         Map<Long, Integer> hues = progress.hueByTournamentId(tournaments);
 
+        // Ordre demande par Charles : semaine, puis importance de la categorie
+        // (Grand Chelem > Masters 1000 > ATP 500 > ... > ATP 50 - exactement
+        // l'ordre de declaration de l'enum TournamentCategory, donc son ordinal).
         return tournaments.stream()
                 .map(t -> toDto(t, progress.statusOf(t), hues.get(t.getId())))
                 .sorted(Comparator.comparing(TournamentDto::season).reversed()
                         .thenComparing(t -> t.weekNumber() == null ? 0 : t.weekNumber())
+                        .thenComparing(t -> t.category().ordinal())
                         .thenComparing(TournamentDto::name))
                 .toList();
     }
 
+    @Transactional(readOnly = true)
     public TournamentDto findOne(Long id) {
         return toDto(getOrThrow(id));
     }
@@ -110,6 +120,10 @@ public class TournamentService {
         t.setQualifyingRound2Points(dto.qualifyingRound2Points());
         t.setRunnerUpPoints(dto.runnerUpPoints());
 
+        if (dto.drawSize() != null && !dto.drawSize().equals(t.getDrawSize())) {
+            resizeDraw(t, dto.drawSize());
+        }
+
         if (dto.rounds() != null) {
             for (RoundPointsDto roundDto : dto.rounds()) {
                 t.getRounds().stream()
@@ -120,6 +134,44 @@ public class TournamentService {
         }
 
         return toDto(t);
+    }
+
+    /**
+     * Change la taille reelle du tableau principal (ex: Rotterdam cree a tort
+     * en 48 au lieu de 32, Charles 2026-09-16) - uniquement possible tant
+     * qu'aucun joueur n'est encore place (sinon les positions/matchs deja
+     * saisis n'auraient plus de sens). Regenere entierement le bareme par
+     * defaut de la categorie et le squelette (vide) du tableau.
+     */
+    private void resizeDraw(Tournament t, int newDrawSize) {
+        if (t.isQualifying()) {
+            throw new IllegalArgumentException(
+                    "Redimensionner un tableau de qualifications n'est pas supporte : supprime-le et recree-le.");
+        }
+        if (entryRepository.countByTournamentId(t.getId()) > 0) {
+            throw new IllegalArgumentException(
+                    "Ce tournoi a deja des joueurs places dans son tableau : retire-les d'abord avant de changer sa taille.");
+        }
+
+        matchRepository.deleteByTournamentId(t.getId());
+        // Suppression immediate (flush), pas juste orpheline en fin de
+        // transaction : sinon les INSERT des nouveaux tours plus bas entrent en
+        // conflit avec la contrainte unique (tournament_id, round_order) tant
+        // que les anciens tours ne sont pas encore reellement effaces en base.
+        List<TournamentRound> oldRounds = new ArrayList<>(t.getRounds());
+        t.getRounds().clear();
+        tournamentRoundRepository.deleteAll(oldRounds);
+        tournamentRoundRepository.flush();
+
+        t.setDrawSize(newDrawSize);
+        int drawSlots = RoundLabels.nextPowerOfTwo(newDrawSize);
+        int totalRounds = RoundLabels.roundCount(drawSlots);
+        List<Integer> points = CategoryDefaults.pointsFor(t.getCategory(), drawSlots);
+        for (int r = 1; r <= totalRounds; r++) {
+            int pts = (r - 1) < points.size() ? points.get(r - 1) : points.get(points.size() - 1);
+            tournamentRoundRepository.save(new TournamentRound(t, r, RoundLabels.labelFor(r, totalRounds), pts));
+        }
+        bracketService.initializeSkeleton(t, drawSlots);
     }
 
     @Transactional
@@ -210,7 +262,23 @@ public class TournamentService {
                 t.getId(), t.getName(), t.getCategory(), t.getSeason(), t.getWeekNumber(), t.getCountry(),
                 t.getMandatorySlot(), t.getDrawSize(), drawSlots,
                 t.getQualifyingRound1Points(), t.getQualifyingRound2Points(), t.getRunnerUpPoints(), rounds,
-                t.isQualifying(), t.getMainTournamentId(), qualifyingTournamentId, status, colorHue
+                t.isQualifying(), t.getMainTournamentId(), qualifyingTournamentId, status, colorHue,
+                winnerOf(t, status)
         );
+    }
+
+    /** Vainqueur de la finale du tableau principal, uniquement si le tournoi est termine. */
+    private TournamentWinnerDto winnerOf(Tournament t, TournamentStatus status) {
+        if (t.isQualifying() || status != TournamentStatus.COMPLETED) {
+            return null;
+        }
+        int totalRounds = RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(t.getDrawSize()));
+        return matchRepository.findByTournamentIdAndRoundOrderAndPositionInRound(t.getId(), totalRounds, 1)
+                .filter(m -> m.getStatus() == MatchStatus.COMPLETED && m.getWinnerEntry() != null
+                        && m.getWinnerEntry().getPlayer() != null)
+                .map(Match::getWinnerEntry)
+                .map(e -> new TournamentWinnerDto(e.getPlayer().getId(), e.getPlayer().getLastName(),
+                        e.getPlayer().getFirstName(), e.getPlayer().getNationality()))
+                .orElse(null);
     }
 }

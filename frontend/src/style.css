@@ -33,6 +33,21 @@
   --neutral-soft: #ece4d4;
   --neutral-soft-text: #6b6252;
 
+  /* Couleurs supplementaires pour distinguer les categories ATP_500 -> ATP_50
+     (GRAND_SLAM et MASTERS_1000 utilisent deja gold/clay ci-dessus). */
+  --blue-soft: #dbe6f5;
+  --blue-soft-text: #2a5488;
+  --teal-soft: #d7efe9;
+  --teal-soft-text: #1b6b58;
+  --purple-soft: #e6dcf3;
+  --purple-soft-text: #5b3a8a;
+  --rose-soft: #f5dde6;
+  --rose-soft-text: #93325a;
+  --olive-soft: #e8ecc9;
+  --olive-soft-text: #5c6b1f;
+  --slate-soft: #dde2e6;
+  --slate-soft-text: #445159;
+
   --radius-sm: 6px;
   --radius-md: 10px;
   --radius-lg: 16px;
@@ -354,7 +369,21 @@ tbody tr.status-completed:hover { background: var(--grass-soft); }
 .tag.tag-clay { background: var(--clay-soft); color: var(--clay-soft-text); }
 .tag.tag-grass { background: var(--grass-soft); color: var(--grass-soft-text); }
 .tag.tag-danger { background: var(--danger-soft); color: var(--danger-soft-text); }
+.tag.tag-blue { background: var(--blue-soft); color: var(--blue-soft-text); }
+.tag.tag-teal { background: var(--teal-soft); color: var(--teal-soft-text); }
+.tag.tag-purple { background: var(--purple-soft); color: var(--purple-soft-text); }
+.tag.tag-rose { background: var(--rose-soft); color: var(--rose-soft-text); }
+.tag.tag-olive { background: var(--olive-soft); color: var(--olive-soft-text); }
+.tag.tag-slate { background: var(--slate-soft); color: var(--slate-soft-text); }
+.tag.tag-neutral { background: var(--neutral-soft); color: var(--neutral-soft-text); }
 .tag.bye { background: var(--neutral-soft); color: var(--neutral-soft-text); }
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+  align-items: start;
+}
 
 /* ---------------------------------------------------------------------- */
 /* Bracket                                                                */

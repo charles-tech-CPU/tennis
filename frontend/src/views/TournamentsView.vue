@@ -33,6 +33,7 @@
           <th>Pays</th>
           <th>Saison</th>
           <th>Tableau</th>
+          <th>Vainqueur</th>
         </tr>
       </thead>
       <tbody>
@@ -49,6 +50,13 @@
           </td>
           <td>{{ t.season }}</td>
           <td>{{ t.drawSize }} ({{ t.drawSlots }} cases)</td>
+          <td class="nation-cell">
+            <template v-if="t.winner">
+              <span v-if="countryFlagIso(t.winner.nationality)" class="fi" :class="`fi-${countryFlagIso(t.winner.nationality)}`"></span>
+              {{ t.winner.lastName }} {{ t.winner.firstName ?? '' }}
+            </template>
+            <span v-else>—</span>
+          </td>
         </tr>
       </tbody>
     </table>

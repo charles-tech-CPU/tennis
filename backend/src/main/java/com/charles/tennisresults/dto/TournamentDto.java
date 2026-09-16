@@ -23,6 +23,7 @@ public record TournamentDto(
         Long mainTournamentId,
         Long qualifyingTournamentId,
         TournamentStatus status,
-        Integer colorHue
+        Integer colorHue,
+        TournamentWinnerDto winner
 ) {
 }

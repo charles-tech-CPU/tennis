@@ -350,6 +350,157 @@ auditer si un classement parait bizarre.
    `push_generic.py` (dupliquer sa liste `jobs`). Verifier les anomalies
    avant de pousser, comme pour la semaine 1.
 
+## 10. Grosse evolution en cours (classement glissant 52 semaines + calendrier + stats)
+
+Charles a demande (2026-09-16) de journaliser ici l'avancement de ce chantier au
+fur et a mesure, pour pouvoir reprendre sans perdre le fil si la session s'arrete
+en cours de route (a relire en debut de session suivante avec ce README).
+
+### La demande d'origine (retrouvee dans l'historique de conversation)
+
+1. **Classement dynamique/glissant** façon vrai systeme ATP : retirer les points
+   d'un tournoi de la semaine `N` de l'annee `Y` des que le tournoi de la semaine
+   `N` de l'annee `Y+1` commence. Poser des questions en cas de doute (fait, voir
+   decisions ci-dessous).
+2. **Page Joueurs** : retirer la colonne "points importes" (`legacySnapshotPoints`),
+   jugee inutile.
+3. **Page Tournois ("calendrier")** : afficher, pour chaque tournoi termine, son
+   vainqueur avec le drapeau de son pays.
+4. **Couleurs par categorie** : un code couleur pour distinguer Grand Chelem /
+   Masters 1000 / ATP 500 / ATP 250 / ... jusqu'a ATP 50 (pas de categorie
+   "Challenger" dans le modele actuel - seulement `ATP_50` comme categorie la plus
+   basse).
+5. **Nouvel onglet Stats** : point de depart pour des stats alimentees au fur et a
+   mesure a la demande (ex: joueur avec le plus de tournois gagnes dans l'annee,
+   joueur avec le plus de matchs gagnes dans l'annee) - concu pour etre facile a
+   etendre plus tard, pas une liste figee.
+
+### Decisions prises avec Charles (AskUserQuestion, 2026-09-16)
+
+- **Cle de rattachement semaine->annee** : PAS de vraie date de tournoi ajoutee au
+  modele. On matche les editions par `weekNumber` : pour un numero de semaine
+  donne, seule l'edition (saison) la plus recente qui a **reellement commence**
+  (au moins un match COMPLETED/BYE, tableau principal ou qualifs) compte ; l'edition
+  de l'annee precedente a cette meme semaine est alors automatiquement exclue. Si
+  l'edition de la nouvelle saison n'a pas encore commence, celle de l'an dernier
+  reste comptee. Un tournoi sans `weekNumber` renseigne reste toujours compte tel
+  quel (pas de mise en concurrence possible).
+- **Vue Classement** : remplace entierement l'ancienne vue par saison (le
+  selecteur d'annee disparait). `/api/ranking` n'a plus de parametre `season`,
+  toujours "live"/glissant.
+
+### Plan d'implementation et etat d'avancement
+
+Tout ce qui suit est **fait, et verifie** : `mvn -q compile` (backend) et
+`npx vite build` (frontend) passent tous les deux sans erreur (2026-09-16).
+Reste a valider a l'usage reel (`mvn spring-boot:run` + `npm run dev`), pas
+seulement a la compilation - a faire au tout debut de la prochaine session si
+ce n'est pas deja fait.
+
+- [x] **Backend - RankingService** : nouvelle methode `computeRanking()` sans
+  parametre saison (`activeTournamentIds()` applique la regle par `weekNumber`
+  decrite plus haut), puis agrege les points sur l'ensemble des entrees dont le
+  tournoi (ou tournoi principal si qualif) fait partie des editions actives -
+  reste de la logique (cases obligatoires, 5 meilleurs autres, remplacement
+  Monte-Carlo/6e) inchangee.
+- [x] **Backend - RankingController** : `GET /api/ranking` n'a plus de
+  parametre `season`.
+- [x] **Backend - EntryRepository** : `findByPlayerIsNotNull()` (remplace
+  `findByTournament_SeasonAndPlayerIsNotNull`).
+- [x] **Frontend - RankingView.vue** : selecteur d'annee retire, titre
+  "Classement" simple, `api.getRanking()` sans param, callout mis a jour pour
+  expliquer la regle du classement glissant.
+- [x] **Frontend - PlayersView.vue** : colonne "Points importes" retiree (le
+  champ `legacySnapshotPoints` reste en base/DTO, juste plus affiche - purement
+  informatif a l'origine, cf section 2).
+- [x] **Backend - vainqueur de tournoi** : `TournamentWinnerDto` (nouveau),
+  ajoute a `TournamentDto.winner` - calcule dans `TournamentService.winnerOf()`
+  a partir du match du dernier tour du tableau principal (seulement si le
+  tournoi est `COMPLETED`).
+- [x] **Frontend - TournamentsView.vue** : nouvelle colonne "Vainqueur" avec
+  drapeau.
+- [x] **Couleurs par categorie** : `CATEGORY_TAG_CLASS` (labels.js) + nouvelles
+  classes/variables CSS (`tag-blue/teal/purple/rose/olive/slate/neutral`,
+  style.css) pour `ATP_500` -> `ATP_50` (pas de categorie "Challenger" a part
+  dans le modele - `ATP_50` est la plus basse, en gris comme "bye").
+- [x] **Onglet Stats** : route `/stats` + `StatsView.vue` (selecteur d'annee),
+  `StatsController`/`StatsService`/`StatsDto`/`PlayerCountDto` (nouveaux) -
+  `GET /api/stats?season=YYYY` retourne pour l'instant `topTournamentWinners`
+  (titres dans la saison) et `topMatchWinners` (matchs gagnes dans la saison,
+  tableau principal + qualifs) ; conçu pour ajouter facilement d'autres stats a
+  la demande de Charles (ajouter un champ a `StatsDto` + le calcul dans
+  `StatsService` + une carte dans `StatsView.vue`). Note : contrairement au
+  classement, une stat "de l'annee" reste rattachee a la saison civile
+  (`Tournament.season`), pas au classement glissant - a confirmer avec Charles
+  si ce n'est pas ce qu'il attendait.
+
+### Bug trouve et corrige a l'usage reel (2026-09-16, apres coup)
+
+`TournamentService.findAll()`/`findOne()` n'etaient pas `@Transactional` : le
+nouveau `winnerOf()` accede a `match.getWinnerEntry().getPlayer()` (lazy) hors
+session Hibernate -> `LazyInitializationException`, `GET /api/tournaments`
+plantait en 500, d'ou l'onglet Tournois vide **et** le formulaire d'ajout
+inutilisable (la page entiere plante des que la liste ne charge pas). Corrige
+en ajoutant `@Transactional(readOnly = true)` aux deux methodes (meme classe
+de bug que celles deja listees plus haut pour `RankingService`, meme remede).
+Backend redemarre et reteste en conditions reelles : `/api/tournaments`,
+`/api/ranking`, `/api/stats` repondent tous 200 avec des donnees coherentes.
+
+Egalement ajuste sur demande de Charles : `StatsService.TOP_N` passe de 15 a
+**3** joueurs affiches par classement de stat.
+
+Ajoute sur demande : champ de recherche par joueur (nom/prenom) dans l'onglet
+Classement (`RankingView.vue`, `filteredRows`) - le rang affiche reste le vrai
+rang au classement (calcule avant filtrage), pas la position dans la liste
+filtree.
+
+Corrections de noms de joueurs faites en base via `PUT /api/players/{id}`
+(pas de trace a garder ici, juste les identifiants au cas ou) : #992 PUJOL
+NAVA -> PUJOL NAVARRO, #22 FILS/FILS -> FILS/ARTHUR.
+
+Tri de l'onglet Tournois change sur demande : saison desc, puis semaine ATP,
+puis **importance de la categorie** (Grand Chelem > Masters 1000 > ATP 500 >
+ATP 250 > ATP 175 > ATP 125 > ATP 100 > ATP 75 > ATP 50 - correspond
+exactement a l'ordre de declaration de `TournamentCategory`, tri par
+`category().ordinal()`), puis nom en dernier recours
+(`TournamentService.findAll()`).
+
+### Taille du tableau modifiable apres creation (2026-09-16)
+
+Constat de Charles : tous les ATP 500 n'ont pas la meme taille (ex. Rotterdam
+= 32, pas 64/48 comme cree a tort) et il n'y avait aucun moyen de corriger ca
+apres coup (`drawSize` etait fige a la creation, cf section 2 - decision
+initiale volontaire, revue ici). Ajoute `TournamentService.resizeDraw()` :
+change `drawSize`/`drawSlots`, regenere le bareme par defaut (`CategoryDefaults`)
+et le squelette de matchs vides, **uniquement si le tournoi n'a encore aucun
+joueur place** (meme garde-fou que la suppression d'un tournoi) - sinon erreur
+claire demandant de retirer les joueurs d'abord. Expose via le meme
+`PUT /api/tournaments/{id}` (nouveau champ `drawSize` dans `TournamentUpdateDto`,
+uniquement pour le tableau principal - pas les qualifs). Champ ajoute au
+formulaire "Modifier les reglages" (`TournamentDetailView.vue`).
+
+Piege rencontre et corrige en le testant reellement (pas juste a la
+compilation) : `t.getRounds().clear()` + `cascade/orphanRemoval` ne suffit pas
+ici, la suppression des anciens tours n'est qu'"orpheline" (differee a la fin
+de la transaction) alors que les nouveaux tours sont inseres tout de suite
+(id `IDENTITY`) -> violation de contrainte unique `(tournament_id,
+round_order)` le temps que les deux coexistent. Fixe en supprimant
+explicitement les anciens tours puis en forçant un `flush()` avant de creer
+les nouveaux. Reproduit et verifie en conditions reelles sur Rotterdam (id 33,
+48 -> 32 : `drawSlots` et le tableau vide de 31 matchs bien regeneres).
+
+### A faire au demarrage de la prochaine session si ce chantier n'est pas encore clos
+
+1. Lancer reellement l'appli (`mvn spring-boot:run` + `npm run dev`, voir
+   sections 3/5/6) et verifier a l'oeil : `/ranking` (classement glissant),
+   `/` (colonne Vainqueur + couleurs de categorie), `/players` (plus de colonne
+   points), `/stats`.
+2. Cas limite non teste en conditions reelles : un `weekNumber` partage par
+   plus de 2 saisons (ex. 2025/2026/2027 en meme temps) - la regle ne garde
+   QUE la plus recente ayant commence, jamais un fallback a 2 crans en arriere ;
+   confirmer avec Charles que c'est bien le comportement voulu si ce cas se
+   presente un jour.
+
 ## Structure du repo
 
 ```

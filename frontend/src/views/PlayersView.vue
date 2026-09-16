@@ -13,7 +13,7 @@
   <div v-if="filtered.length" class="table-card">
     <table>
       <thead>
-        <tr><th>Nom</th><th>Prénom</th><th>Nationalité</th><th class="num">Points importés (photo Excel)</th></tr>
+        <tr><th>Nom</th><th>Prénom</th><th>Nationalité</th></tr>
       </thead>
       <tbody>
         <tr v-for="p in filtered" :key="p.id">
@@ -23,7 +23,6 @@
             <span v-if="countryFlagIso(p.nationality)" class="fi" :class="`fi-${countryFlagIso(p.nationality)}`"></span>
             {{ p.nationality ?? '—' }}
           </td>
-          <td class="num">{{ p.legacySnapshotPoints ?? '—' }}</td>
         </tr>
       </tbody>
     </table>

@@ -54,7 +54,12 @@ export default {
   },
 
   // Classement
-  getRanking(season) {
-    return client.get('/ranking', { params: { season } }).then(r => r.data)
+  getRanking() {
+    return client.get('/ranking').then(r => r.data)
+  },
+
+  // Stats
+  getStats(season) {
+    return client.get('/stats', { params: { season } }).then(r => r.data)
   }
 }

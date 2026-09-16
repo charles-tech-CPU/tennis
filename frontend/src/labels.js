@@ -12,7 +12,14 @@ export const CATEGORY_LABELS = {
 
 export const CATEGORY_TAG_CLASS = {
   GRAND_SLAM: 'tag-gold',
-  MASTERS_1000: 'tag-clay'
+  MASTERS_1000: 'tag-clay',
+  ATP_500: 'tag-blue',
+  ATP_250: 'tag-teal',
+  ATP_175: 'tag-purple',
+  ATP_125: 'tag-rose',
+  ATP_100: 'tag-olive',
+  ATP_75: 'tag-slate',
+  ATP_50: 'tag-neutral'
 }
 
 export function categoryLabel(category) {
@@ -97,7 +104,7 @@ const COUNTRY_ISO = {
   'LUXEMBOURG': 'lu', 'MALAISIE': 'my', 'MAROC': 'ma', 'MEXIQUE': 'mx',
   'MOLDAVIE': 'md', 'NEW ZELAND': 'nz', 'NIGERIA': 'ng', 'NORVEGE': 'no',
   'OUZBEKISTAN': 'uz', 'PAKISTAN': 'pk', 'PARAGUAY': 'py', 'PEROU': 'pe',
-  'POLOGNE': 'pl', 'PORTUGAL': 'pt', 'RD CONGO': 'cd', 'ROUMANIE': 'ro',
+  'POLOGNE': 'pl', 'PORTUGAL': 'pt', 'QATAR': 'qa', 'RD CONGO': 'cd', 'ROUMANIE': 'ro',
   'RUSSIE': 'ru', 'SERBIE': 'rs', 'SLOVAQUIE': 'sk', 'SLOVENIE': 'si',
   'SUEDE': 'se', 'SUISSE': 'ch', 'TAIWAN': 'tw', 'TCHEQUIE': 'cz',
   'THAILANDE': 'th', 'TUNISIE': 'tn', 'TUNSIE': 'tn', 'TURQUIE': 'tr',

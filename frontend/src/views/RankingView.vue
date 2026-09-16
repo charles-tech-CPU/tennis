@@ -1,16 +1,22 @@
 <template>
   <div class="page-header">
     <div>
-      <h1>Classement {{ season }}</h1>
+      <h1>Classement</h1>
       <p class="subtitle">{{ rows.length }} joueur(s) avec au moins un résultat acté</p>
     </div>
     <div class="actions">
-      <input v-model.number="season" type="number" style="width:100px" />
       <button class="secondary" @click="load">Actualiser</button>
     </div>
   </div>
 
+  <div class="filters">
+    <input v-model="search" placeholder="Rechercher un joueur..." />
+  </div>
+
   <p class="callout">
+    Classement glissant sur 52 semaines (comme le vrai circuit ATP) : pour une semaine donnée,
+    seule l'édition la plus récente ayant déjà commencé compte, l'édition de l'année précédente
+    à cette même semaine est automatiquement retirée dès que la nouvelle a débuté.
     Calcul automatique : 4 Grand Chelem + ATP Finals + 8 des 9 Masters 1000 (hors Monte-Carlo) +
     somme des 5 meilleurs autres tournois + le meilleur entre Monte-Carlo et le 6e meilleur autre tournoi.
     Seuls les tournois avec un résultat acté (joueur éliminé ou vainqueur) comptent.
@@ -23,10 +29,10 @@
     </span>
   </p>
 
-  <div v-if="rows.length" class="scroll-top" ref="scrollTopEl" @scroll="onTopScroll">
+  <div v-if="filteredRows.length" class="scroll-top" ref="scrollTopEl" @scroll="onTopScroll">
     <div :style="{ width: contentWidth + 'px', height: '1px' }"></div>
   </div>
-  <div v-if="rows.length" class="table-card ranking-scroll" ref="scrollBottomEl" @scroll="onBottomScroll">
+  <div v-if="filteredRows.length" class="table-card ranking-scroll" ref="scrollBottomEl" @scroll="onBottomScroll">
     <table class="ranking-table">
       <thead>
         <tr>
@@ -49,12 +55,12 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(r, i) in rows" :key="r.playerId" :class="{ 'rank-1': i === 0 }">
+        <tr v-for="{ r, rank } in filteredRows" :key="r.playerId" :class="{ 'rank-1': rank === 1 }">
           <td
             class="rank sticky-col sticky-1"
             :style="rowAccentStyle(r)"
             :title="r.liveTournaments?.length ? `Encore en jeu : ${r.liveTournaments.map(lt => lt.tournamentName).join(', ')} (points minimum garantis)` : null"
-          >{{ i + 1 }}</td>
+          >{{ rank }}</td>
           <td class="sticky-col sticky-2" :class="{ 'player-fr': isFrench(r) }">
             {{ r.lastName }} {{ r.firstName ?? '' }}
           </td>
@@ -88,6 +94,10 @@
       </tbody>
     </table>
   </div>
+  <div v-else-if="loaded && rows.length" class="empty-state">
+    <div class="icon">🎾</div>
+    <p>Aucun joueur ne correspond à la recherche.</p>
+  </div>
   <div v-else-if="loaded" class="empty-state">
     <div class="icon">🏆</div>
     <p>Aucun résultat acté pour cette saison encore.</p>
@@ -99,8 +109,8 @@ import { computed, nextTick, onMounted, ref } from 'vue'
 import api from '../services/api'
 import { mandatorySlotLabel, countryFlagIso, hslColor } from '../labels'
 
-const season = ref(new Date().getFullYear())
 const rows = ref([])
+const search = ref('')
 const loaded = ref(false)
 const contentWidth = ref(0)
 const scrollTopEl = ref(null)
@@ -152,6 +162,15 @@ function liveCellStyle(row, dto) {
   return lt ? { background: hslColor(lt.colorHue, 70, 91), fontWeight: 700 } : {}
 }
 
+// Le rang affiche doit rester le vrai rang au classement, pas la position
+// dans la liste filtree - on l'attache a chaque ligne avant de filtrer.
+const filteredRows = computed(() => {
+  const q = search.value.trim().toLowerCase()
+  return rows.value
+    .map((r, i) => ({ r, rank: i + 1 }))
+    .filter(({ r }) => !q || `${r.lastName} ${r.firstName ?? ''}`.toLowerCase().includes(q))
+})
+
 const liveTournamentsLegend = computed(() => {
   const byId = new Map()
   for (const r of rows.value) {
@@ -161,7 +180,7 @@ const liveTournamentsLegend = computed(() => {
 })
 
 async function load() {
-  rows.value = await api.getRanking(season.value)
+  rows.value = await api.getRanking()
   loaded.value = true
   await nextTick()
   contentWidth.value = scrollBottomEl.value ? scrollBottomEl.value.scrollWidth : 0

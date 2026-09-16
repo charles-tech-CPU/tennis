@@ -8,6 +8,7 @@
       <router-link to="/">Tournois</router-link>
       <router-link to="/ranking">Classement</router-link>
       <router-link to="/players">Joueurs</router-link>
+      <router-link to="/stats">Stats</router-link>
     </nav>
   </header>
   <main :class="{ wide: route.meta.wide }">

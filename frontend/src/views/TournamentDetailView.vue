@@ -21,7 +21,8 @@
   <div v-if="editing" class="card">
     <h3>Réglages du tournoi</h3>
     <p class="field-hint" style="margin-top:0">
-      Le nom, la saison et la taille du tableau sont fixés à la création (ils conditionnent le tableau déjà généré). Tout le reste est modifiable ici.
+      Le nom et la saison sont fixés à la création. Tout le reste est modifiable ici, y compris la taille du
+      tableau — mais uniquement tant qu'aucun joueur n'est encore placé dedans (sinon retire-les d'abord).
     </p>
     <div class="inline" style="margin-top:12px">
       <select v-model="editForm.category">
@@ -36,6 +37,7 @@
         <option value="">Pas une case obligatoire</option>
         <option v-for="m in mandatorySlots" :key="m" :value="m">{{ mandatorySlotLabel(m) }}</option>
       </select>
+      <input v-model.number="editForm.drawSize" type="number" min="2" placeholder="Taille réelle du tableau" />
     </div>
     <div class="inline" style="margin-top:8px">
       <input v-model.number="editForm.qualifyingRound1Points" type="number" placeholder="Points qualif. tour 1" />
@@ -191,7 +193,7 @@ const editError = ref('')
 const editForm = reactive({
   category: '', weekNumber: null, country: '', mandatorySlot: '',
   qualifyingRound1Points: null, qualifyingRound2Points: null, runnerUpPoints: null,
-  rounds: []
+  rounds: [], drawSize: null
 })
 
 const qualifForm = reactive({ drawSize: 24, rounds: [{ roundOrder: 1, roundLabel: 'Q1', points: 7 }, { roundOrder: 2, roundLabel: 'Q2', points: 13 }] })
@@ -256,6 +258,7 @@ function toggleEdit() {
     editForm.qualifyingRound2Points = tournament.value.qualifyingRound2Points
     editForm.runnerUpPoints = tournament.value.runnerUpPoints
     editForm.rounds = tournament.value.rounds.map(r => ({ ...r }))
+    editForm.drawSize = tournament.value.drawSize
     editError.value = ''
   }
   editing.value = !editing.value
@@ -264,6 +267,11 @@ function toggleEdit() {
 async function saveEdit() {
   editError.value = ''
   try {
+    // Si la taille du tableau change, le nombre/bareme des tours est
+    // regenere cote backend (voir TournamentService.resizeDraw) : inutile (et
+    // potentiellement incoherent) de renvoyer l'ancien detail par tour dans
+    // ce cas, on laisse les nouveaux points par defaut de la categorie.
+    const drawSizeChanged = editForm.drawSize && editForm.drawSize !== tournament.value.drawSize
     tournament.value = await api.updateTournament(Number(props.id), {
       category: editForm.category,
       weekNumber: editForm.weekNumber || null,
@@ -272,7 +280,8 @@ async function saveEdit() {
       qualifyingRound1Points: editForm.qualifyingRound1Points,
       qualifyingRound2Points: editForm.qualifyingRound2Points,
       runnerUpPoints: editForm.runnerUpPoints,
-      rounds: editForm.rounds
+      rounds: drawSizeChanged ? null : editForm.rounds,
+      drawSize: editForm.drawSize || null
     })
     editing.value = false
     if (activeTab.value === 'main') await loadDraw(Number(props.id))
