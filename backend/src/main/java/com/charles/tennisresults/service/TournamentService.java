@@ -58,12 +58,14 @@ public class TournamentService {
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, tournaments);
         Map<Long, Integer> hues = progress.hueByTournamentId(tournaments);
 
-        // Ordre demande par Charles : semaine, puis importance de la categorie
-        // (Grand Chelem > Masters 1000 > ATP 500 > ... > ATP 50 - exactement
-        // l'ordre de declaration de l'enum TournamentCategory, donc son ordinal).
+        // Ordre demande par Charles : les tournois en cours en tete de liste,
+        // puis semaine, puis importance de la categorie (Grand Chelem > Masters
+        // 1000 > ATP 500 > ... > ATP 50 - exactement l'ordre de declaration de
+        // l'enum TournamentCategory, donc son ordinal).
         return tournaments.stream()
                 .map(t -> toDto(t, progress.statusOf(t), hues.get(t.getId())))
-                .sorted(Comparator.comparing(TournamentDto::season).reversed()
+                .sorted(Comparator.comparing((TournamentDto t) -> t.status() == TournamentStatus.IN_PROGRESS ? 0 : 1)
+                        .thenComparing(Comparator.comparing(TournamentDto::season).reversed())
                         .thenComparing(t -> t.weekNumber() == null ? 0 : t.weekNumber())
                         .thenComparing(t -> t.category().ordinal())
                         .thenComparing(TournamentDto::name))

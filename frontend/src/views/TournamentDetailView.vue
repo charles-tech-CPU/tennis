@@ -134,6 +134,7 @@
         <button type="submit">Ajouter</button>
       </form>
       <p v-if="error" class="form-error">{{ error }}</p>
+      <p v-if="duplicateWarning" class="form-warning">{{ duplicateWarning }}</p>
     </div>
   </template>
 
@@ -172,6 +173,7 @@ const props = defineProps({ id: { type: [String, Number], required: true } })
 const tournament = ref(null)
 const players = ref([])
 const error = ref('')
+const duplicateWarning = ref('')
 
 const activeTab = ref('main')
 const drawTournament = ref(null)
@@ -290,11 +292,34 @@ async function saveEdit() {
   }
 }
 
+function normName(s) {
+  return (s ?? '').trim().toUpperCase()
+}
+
+/** Detecte un joueur deja existant avec le meme nom, et separement le cas exact (nom + prenom). */
+function findDuplicatePlayer(lastName, firstName) {
+  const ln = normName(lastName)
+  const fn = normName(firstName)
+  const sameLastName = players.value.filter(p => normName(p.lastName) === ln)
+  const exact = sameLastName.find(p => normName(p.firstName) === fn)
+  return { sameLastName, exact }
+}
+
 async function submitEntry() {
   error.value = ''
+  duplicateWarning.value = ''
   try {
     let playerId = entryForm.playerId
     if (!entryForm.bye && entryForm.newPlayer) {
+      const { sameLastName, exact } = findDuplicatePlayer(newPlayerForm.lastName, newPlayerForm.firstName)
+      if (exact) {
+        error.value = `${exact.lastName} ${exact.firstName ?? ''} existe déjà : impossible d'ajouter un doublon (même nom et prénom).`
+        return
+      }
+      if (sameLastName.length) {
+        duplicateWarning.value = `Attention : un joueur nommé ${sameLastName[0].lastName} existe déjà (prénom${sameLastName.length > 1 ? 's' : ''} : ${sameLastName.map(p => p.firstName ?? '—').join(', ')}). Vérifie qu'il ne s'agit pas d'un doublon.`
+      }
+
       const created = await api.createPlayer({
         lastName: newPlayerForm.lastName,
         firstName: newPlayerForm.firstName,
