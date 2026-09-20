@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class EntryService {
@@ -90,10 +91,24 @@ public class EntryService {
      * meme semaine par construction et ne comptent pas comme "2 tournois"
      * (un qualifie promu au tableau principal y a legitimement sa propre
      * entree, en plus de celle des qualifs).
+     *
+     * Exception : Indian Wells, Miami, Madrid et Rome sont exemptes de cette
+     * verification (Charles, 2026-09-20 - ces 4 Masters 1000 ont chacun leur
+     * propre subtilite de calendrier - Sunshine Double sur 2 semaines pour
+     * IW/Miami, qualifs a cheval sur la semaine d'avant pour Madrid/Rome - et
+     * ont fini par generer trop de faux positifs bloquants ; plus simple et
+     * plus fiable de ne plus du tout verifier les conflits de semaine pour
+     * ces tournois-la que de continuer a chasser des cas particuliers).
+     * Consequence acceptee : les points de classement d'un joueur peuvent
+     * temporairement compter pour 2 tournois a la fois dans ces cas, a
+     * corriger manuellement si besoin.
      */
     private void checkSameWeekConflict(Tournament tournament, Player player) {
         if (tournament.getWeekNumber() == null) {
             return; // semaine non renseignee : rien a comparer
+        }
+        if (isExemptFromWeekConflict(tournament)) {
+            return;
         }
         Long siblingId = tournament.isQualifying()
                 ? tournament.getMainTournamentId()
@@ -104,6 +119,9 @@ public class EntryService {
             if (other.getId().equals(tournament.getId()) || other.getId().equals(siblingId)) {
                 continue;
             }
+            if (isExemptFromWeekConflict(other)) {
+                continue;
+            }
             if (Objects.equals(other.getSeason(), tournament.getSeason())
                     && Objects.equals(other.getWeekNumber(), tournament.getWeekNumber())) {
                 throw new IllegalArgumentException(
@@ -111,6 +129,16 @@ public class EntryService {
                                 + " la meme semaine (semaine " + tournament.getWeekNumber() + ").");
             }
         }
+    }
+
+    private static final Set<String> WEEK_CONFLICT_EXEMPT_NAMES = Set.of(
+            "MIAMI", "MIAMI - QUALIFS",
+            "INDIAN WELLS", "INDIAN WELLS - QUALIFS",
+            "MADRID", "MADRID - QUALIFS",
+            "ROME", "ROME - QUALIFS");
+
+    private static boolean isExemptFromWeekConflict(Tournament t) {
+        return t.getName() != null && WEEK_CONFLICT_EXEMPT_NAMES.contains(t.getName().toUpperCase());
     }
 
     private EntryDto toDto(Entry e) {

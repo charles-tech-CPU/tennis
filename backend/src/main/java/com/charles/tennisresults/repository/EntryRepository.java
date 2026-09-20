@@ -14,5 +14,7 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
 
     List<Entry> findByPlayerIsNotNull();
 
+    List<Entry> findByTournament_IdIn(List<Long> tournamentIds);
+
     long countByTournamentId(Long tournamentId);
 }

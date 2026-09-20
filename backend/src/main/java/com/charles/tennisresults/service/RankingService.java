@@ -210,6 +210,11 @@ public class RankingService {
             if (sixth != null && sixth != replacement) {
                 nonCounted.add(sixth);
             }
+            nonCounted.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
+
+            substituteMissingMandatorySlots(mandatorySlots, nonCounted);
+            mandatoryTotal = mandatorySlots.values().stream().mapToInt(TournamentPointsDto::points).sum();
+            total = mandatoryTotal + best5 + replacementValue;
 
             rows.add(new RankingRowDto(player.getId(), player.getLastName(), player.getFirstName(),
                     player.getNationality(), mandatorySlots, monteCarlo, bestOthers, replacement, nonCounted,
@@ -218,6 +223,36 @@ public class RankingService {
 
         rows.sort(Comparator.comparingInt(RankingRowDto::total).reversed());
         return rows;
+    }
+
+    /**
+     * Recycle les tournois "non comptabilises" (au-dela des 5 meilleurs +
+     * remplacement Monte-Carlo/6e) dans les cases obligatoires jamais jouees
+     * par ce joueur (Grand Chelem/Masters 1000 ou il n'avait pas le
+     * classement pour etre accepte) - Charles, 2026-09-18, ex: Moro Canas,
+     * pas assez bien classe pour disputer le moindre Grand Chelem/Masters
+     * 1000, dont le resultat excedentaire a Murcia est materialise dans la
+     * case Australian Open plutot que de rester non comptabilise. Le meilleur
+     * tournoi disponible va dans la case vide la plus prestigieuse (ordre de
+     * {@link MandatorySlot}, Monte-Carlo exclu car deja gere a part via son
+     * propre mecanisme de remplacement), et ainsi de suite. Consomme les
+     * candidats utilises dans `nonCounted` (deja trie par points decroissants).
+     */
+    private void substituteMissingMandatorySlots(Map<MandatorySlot, TournamentPointsDto> mandatorySlots,
+                                                   List<TournamentPointsDto> nonCounted) {
+        Iterator<TournamentPointsDto> candidates = nonCounted.iterator();
+        for (MandatorySlot slot : MandatorySlot.values()) {
+            if (slot == MandatorySlot.MONTE_CARLO || mandatorySlots.containsKey(slot)) {
+                continue;
+            }
+            if (!candidates.hasNext()) {
+                break;
+            }
+            TournamentPointsDto candidate = candidates.next();
+            candidates.remove();
+            mandatorySlots.put(slot, new TournamentPointsDto(
+                    candidate.tournamentId(), candidate.tournamentName(), candidate.points(), true));
+        }
     }
 
     /**

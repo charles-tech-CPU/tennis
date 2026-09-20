@@ -105,7 +105,7 @@ const COUNTRY_ISO = {
   'MOLDAVIE': 'md', 'NEW ZELAND': 'nz', 'NIGERIA': 'ng', 'NORVEGE': 'no',
   'OUZBEKISTAN': 'uz', 'PAKISTAN': 'pk', 'PARAGUAY': 'py', 'PEROU': 'pe',
   'POLOGNE': 'pl', 'PORTUGAL': 'pt', 'QATAR': 'qa', 'RD CONGO': 'cd', 'ROUMANIE': 'ro',
-  'RUSSIE': 'ru', 'SERBIE': 'rs', 'SLOVAQUIE': 'sk', 'SLOVENIE': 'si',
+  'RUSSIE': 'ru', 'SAINT MARIN': 'sm', 'SERBIE': 'rs', 'SLOVAQUIE': 'sk', 'SLOVENIE': 'si',
   'SUEDE': 'se', 'SUISSE': 'ch', 'TAIWAN': 'tw', 'TCHEQUIE': 'cz',
   'THAILANDE': 'th', 'TUNISIE': 'tn', 'TUNSIE': 'tn', 'TURQUIE': 'tr',
   'UKRAINE': 'ua', 'URUGUAY': 'uy', 'USA': 'us', 'VENEZUELA': 've', 'VIETNAM': 'vn',

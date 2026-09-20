@@ -350,6 +350,12 @@ tbody tr.status-completed:hover { background: var(--grass-soft); }
 .ranking-table .cell-named .name { display: block; font-size: 10px; color: var(--text-muted); font-weight: 400; white-space: normal; max-width: 100px; }
 .ranking-table .non-counted { border-left: 2px solid var(--border-strong); white-space: normal; min-width: 220px; }
 .ranking-table .non-counted .tag { margin: 2px 4px 2px 0; }
+/* Case obligatoire (Grand Chelem/Masters 1000) jamais jouee faute de
+   classement suffisant, dont le vide est comble par un resultat excedentaire
+   d'un autre tournoi (voir RankingService.substituteMissingMandatorySlots) :
+   fond distinct + italique pour ne pas la confondre avec un vrai resultat. */
+.ranking-table .substituted { background: var(--neutral-soft); font-style: italic; }
+.ranking-table .substituted .pts { font-style: normal; }
 
 /* ---------------------------------------------------------------------- */
 /* Tags / badges                                                         */
@@ -384,6 +390,14 @@ tbody tr.status-completed:hover { background: var(--grass-soft); }
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 20px;
   align-items: start;
+}
+/* Tableaux a 5 colonnes (tournoi + parcours/tour en plus) : trop serres dans
+   une carte simple, on leur donne la largeur de 2 cartes. */
+.stats-grid .table-card.wide {
+  grid-column: span 2;
+}
+@media (max-width: 900px) {
+  .stats-grid .table-card.wide { grid-column: span 1; }
 }
 
 /* ---------------------------------------------------------------------- */

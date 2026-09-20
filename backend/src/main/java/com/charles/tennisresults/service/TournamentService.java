@@ -135,6 +135,16 @@ public class TournamentService {
             }
         }
 
+        // Les qualifs partagent leur semaine avec le tableau principal "par
+        // construction" (cf. EntryService) : si on deplace le principal sans
+        // repercuter le changement sur ses qualifs, les deux se desynchronisent
+        // et cassent la detection de conflit de semaine (Charles, 2026-09-20 -
+        // exactement le bug qui a touche Madrid).
+        if (!t.isQualifying()) {
+            tournamentRepository.findByMainTournamentId(t.getId())
+                    .ifPresent(q -> q.setWeekNumber(computeQualifyingWeekNumber(t)));
+        }
+
         return toDto(t);
     }
 
@@ -190,14 +200,7 @@ public class TournamentService {
         q.setName(main.getName() + " - Qualifs");
         q.setCategory(main.getCategory());
         q.setSeason(main.getSeason());
-        // Seuls les Grand Chelem jouent leurs qualifs la semaine PRECEDENT le
-        // tableau principal (evenement a part sur le calendrier) ; pour toutes
-        // les autres categories, qualifs et tableau principal sont la meme
-        // semaine (Charles, 2026-09-15 - ex: Watanuki inscrit a Phan Thiet la
-        // meme semaine que les qualifs de l'Australian Open).
-        q.setWeekNumber(main.getCategory() == TournamentCategory.GRAND_SLAM && main.getWeekNumber() != null
-                ? main.getWeekNumber() - 1
-                : main.getWeekNumber());
+        q.setWeekNumber(computeQualifyingWeekNumber(main));
         q.setCountry(main.getCountry());
         q.setDrawSize(dto.drawSize());
         q.setQualifying(true);
@@ -214,6 +217,28 @@ public class TournamentService {
         bracketService.initializeSkeleton(q, dto.drawSize(), totalRounds);
 
         return toDto(q);
+    }
+
+    /**
+     * Les Grand Chelem et les Masters 1000 jouent leurs qualifs la semaine
+     * PRECEDENT le tableau principal (evenement a part sur le calendrier,
+     * meme pour les Masters 1000 sur 1 semaine comme Madrid ou Monte Carlo :
+     * les qualifs se jouent le week-end avant) ; pour toutes les autres
+     * categories, qualifs et tableau principal sont la meme semaine (Charles,
+     * 2026-09-15 - ex: Watanuki inscrit a Phan Thiet la meme semaine que les
+     * qualifs de l'Australian Open). Charles, 2026-09-20 - generalise a tous
+     * les Masters 1000 (pas seulement Indian Wells/Miami) suite au meme bug
+     * sur Madrid : ses qualifs etaient restees a la meme semaine (ou apres,
+     * une fois le tableau principal deplace) que le tableau principal,
+     * empechant a tort les joueurs elimines des qualifs de s'inscrire a un
+     * tournoi la semaine du tableau principal.
+     */
+    private Integer computeQualifyingWeekNumber(Tournament main) {
+        boolean qualifsWeekBefore = main.getCategory() == TournamentCategory.GRAND_SLAM
+                || main.getCategory() == TournamentCategory.MASTERS_1000;
+        return qualifsWeekBefore && main.getWeekNumber() != null
+                ? main.getWeekNumber() - 1
+                : main.getWeekNumber();
     }
 
     @Transactional
