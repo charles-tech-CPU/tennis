@@ -7,12 +7,12 @@
   </div>
 
   <div class="filters">
-    <input v-model="search" placeholder="Rechercher un tournoi..." />
-    <select v-model="seasonFilter">
+    <input v-model="search" aria-label="Rechercher un tournoi" placeholder="Rechercher un tournoi..." />
+    <select v-model="seasonFilter" aria-label="Filtrer par saison">
       <option value="">Toutes les saisons</option>
       <option v-for="s in seasons" :key="s" :value="s">{{ s }}</option>
     </select>
-    <select v-model="categoryFilter">
+    <select v-model="categoryFilter" aria-label="Filtrer par catégorie">
       <option value="">Toutes les catégories</option>
       <option v-for="c in categories" :key="c" :value="c">{{ categoryLabel(c) }}</option>
     </select>
@@ -69,25 +69,25 @@
   <h2 class="section-title">Ajouter un tournoi</h2>
   <form class="card" @submit.prevent="submit">
     <div class="inline">
-      <input v-model="form.name" placeholder="Nom du tournoi" required />
-      <select v-model="form.category" required>
+      <input v-model="form.name" aria-label="Nom du tournoi" placeholder="Nom du tournoi" required />
+      <select v-model="form.category" aria-label="Catégorie" required>
         <option disabled value="">Catégorie</option>
         <option v-for="c in categories" :key="c" :value="c">{{ categoryLabel(c) }}</option>
       </select>
-      <input v-model.number="form.season" type="number" placeholder="Saison" required />
-      <input v-model.number="form.weekNumber" type="number" placeholder="Semaine ATP" />
-      <select v-model="form.country">
+      <input v-model.number="form.season" aria-label="Saison" type="number" placeholder="Saison" required />
+      <input v-model.number="form.weekNumber" aria-label="Semaine ATP" type="number" placeholder="Semaine ATP" />
+      <select v-model="form.country" aria-label="Pays">
         <option value="">Pays non renseigné</option>
         <option v-for="c in countryNames" :key="c" :value="c">{{ c }}</option>
       </select>
     </div>
     <div class="inline" style="margin-top:8px">
-      <input v-model.number="form.drawSize" type="number" min="2" placeholder="Taille réelle du tableau (ex: 32, 96...)" required />
-      <select v-model="form.mandatorySlot">
+      <input v-model.number="form.drawSize" aria-label="Taille réelle du tableau" type="number" min="2" placeholder="Taille réelle du tableau (ex: 32, 96...)" required />
+      <select v-model="form.mandatorySlot" aria-label="Case obligatoire">
         <option value="">Pas une case obligatoire</option>
         <option v-for="m in mandatorySlots" :key="m" :value="m">{{ mandatorySlotLabel(m) }}</option>
       </select>
-      <input v-model.number="form.runnerUpPoints" type="number" placeholder="Points du finaliste (optionnel)" />
+      <input v-model.number="form.runnerUpPoints" aria-label="Points du finaliste" type="number" placeholder="Points du finaliste (optionnel)" />
     </div>
     <p class="field-hint">
       Le barème de points par tour est pré-rempli automatiquement selon la catégorie (modifiable ensuite sur la page du tournoi).

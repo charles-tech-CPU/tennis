@@ -86,7 +86,7 @@
   </template>
 
   <!-- Detail d'une rencontre + saisie des matchs -->
-  <div v-if="selected" class="score-editor" @click.self="closeTie">
+  <div v-if="selected" class="score-editor" @click.self="closeTie" @keydown.esc="closeTie">
     <div class="card tie-detail">
       <div class="tie-detail-head">
         <div class="tie-detail-team" :class="{ won: selected.winner === 1 }">
@@ -117,12 +117,12 @@
         <form v-else class="rubber-form" @submit.prevent="saveRubber">
           <div class="rubber-label">Match {{ r.order }} · {{ rubberKind(r) }}</div>
           <div class="rubber-form-grid">
-            <input v-model="editing.team1Players" :placeholder="`Joueur(s) ${selected.team1 ?? 'équipe 1'}`" />
-            <input v-model="editing.team2Players" :placeholder="`Joueur(s) ${selected.team2 ?? 'équipe 2'}`" />
+            <input v-model="editing.team1Players" aria-label="Joueur(s) équipe 1" :placeholder="`Joueur(s) ${selected.team1 ?? 'équipe 1'}`" />
+            <input v-model="editing.team2Players" aria-label="Joueur(s) équipe 2" :placeholder="`Joueur(s) ${selected.team2 ?? 'équipe 2'}`" />
           </div>
-          <input v-model="editing.score" placeholder="Score côté équipe 1, ex : 6-4 3-6 7-6(5)" />
+          <input v-model="editing.score" aria-label="Score" placeholder="Score côté équipe 1, ex : 6-4 3-6 7-6(5)" />
           <div class="inline">
-            <select v-model="editing.status">
+            <select v-model="editing.status" aria-label="Statut">
               <option value="PENDING">À jouer</option>
               <option value="COMPLETED">Joué</option>
               <option value="NOT_PLAYED">Non disputé</option>
@@ -149,7 +149,7 @@
   </div>
 
   <!-- Creation / modification d'une rencontre (pays, poule, dates, lieu) -->
-  <div v-if="tieForm" class="score-editor" @click.self="tieForm = null">
+  <div v-if="tieForm" class="score-editor" @click.self="tieForm = null" @keydown.esc="tieForm = null">
     <form class="card tie-detail" @submit.prevent="saveTieForm">
       <h3>{{ tieForm.id ? 'Modifier la rencontre' : `Nouvelle rencontre · ${phase.label}` }}</h3>
       <div class="team-form-grid">
@@ -195,22 +195,22 @@
   </div>
 
   <!-- Creation du tableau final (4 quarts, demies et finale en attente) -->
-  <div v-if="bracketForm" class="score-editor" @click.self="bracketForm = null">
+  <div v-if="bracketForm" class="score-editor" @click.self="bracketForm = null" @keydown.esc="bracketForm = null">
     <form class="card tie-detail bracket-form" @submit.prevent="saveBracketForm">
       <h3>Créer le tableau · {{ phase.label }} {{ season }}</h3>
       <p class="field-hint">Dans l'ordre du tableau : les vainqueurs des quarts 1 et 2 se retrouvent en demi-finale 1, ceux des quarts 3 et 4 en demi-finale 2.</p>
       <div v-for="(q, i) in bracketForm.quarters" :key="i" class="quarter-row">
         <span class="quarter-label">QF{{ i + 1 }}</span>
-        <select v-model="q.team1">
+        <select v-model="q.team1" aria-label="Équipe 1">
           <option value="">Pays</option>
           <option v-for="c in COUNTRY_NAMES" :key="c" :value="c">{{ c }}</option>
         </select>
         <span>vs</span>
-        <select v-model="q.team2">
+        <select v-model="q.team2" aria-label="Équipe 2">
           <option value="">Pays</option>
           <option v-for="c in COUNTRY_NAMES" :key="c" :value="c">{{ c }}</option>
         </select>
-        <input v-model="q.dates" placeholder="Date (facultatif)" />
+        <input v-model="q.dates" aria-label="Date" placeholder="Date (facultatif)" />
       </div>
       <div class="team-form-grid">
         <label class="stacked">Dates de l'événement <input v-model="bracketForm.dates" placeholder="ex : 23 - 28 novembre 2027" /></label>

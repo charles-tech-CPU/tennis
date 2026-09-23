@@ -5,7 +5,7 @@
       <p class="subtitle">Statistiques de la saison, alimentées au fur et à mesure</p>
     </div>
     <div class="actions">
-      <input v-model.number="season" type="number" style="width:100px" />
+      <input v-model.number="season" aria-label="Saison" type="number" style="width:100px" />
       <button class="secondary" @click="load">Actualiser</button>
     </div>
   </div>

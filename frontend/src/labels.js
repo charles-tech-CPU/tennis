@@ -127,7 +127,7 @@ export function countryFlagIso(nationality) {
  */
 export const COUNTRY_NAMES = Object.keys(COUNTRY_ISO)
   .filter(name => name !== 'DOMINQUE' && name !== 'TUNSIE')
-  .sort()
+  .sort((a, b) => a.localeCompare(b))
 
 /**
  * Couleur pastel HSL a partir d'une teinte (0-359) - utilisee pour colorer un

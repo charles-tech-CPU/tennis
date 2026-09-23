@@ -25,24 +25,24 @@
       tableau — mais uniquement tant qu'aucun joueur n'est encore placé dedans (sinon retire-les d'abord).
     </p>
     <div class="inline" style="margin-top:12px">
-      <select v-model="editForm.category">
+      <select v-model="editForm.category" aria-label="Catégorie">
         <option v-for="c in categories" :key="c" :value="c">{{ categoryLabel(c) }}</option>
       </select>
-      <input v-model.number="editForm.weekNumber" type="number" placeholder="Semaine ATP" />
-      <select v-model="editForm.country">
+      <input v-model.number="editForm.weekNumber" aria-label="Semaine ATP" type="number" placeholder="Semaine ATP" />
+      <select v-model="editForm.country" aria-label="Pays">
         <option value="">Pays non renseigné</option>
         <option v-for="c in countryNames" :key="c" :value="c">{{ c }}</option>
       </select>
-      <select v-model="editForm.mandatorySlot">
+      <select v-model="editForm.mandatorySlot" aria-label="Case obligatoire">
         <option value="">Pas une case obligatoire</option>
         <option v-for="m in mandatorySlots" :key="m" :value="m">{{ mandatorySlotLabel(m) }}</option>
       </select>
-      <input v-model.number="editForm.drawSize" type="number" min="2" placeholder="Taille réelle du tableau" />
+      <input v-model.number="editForm.drawSize" aria-label="Taille réelle du tableau" type="number" min="2" placeholder="Taille réelle du tableau" />
     </div>
     <div class="inline" style="margin-top:8px">
-      <input v-model.number="editForm.qualifyingRound1Points" type="number" placeholder="Points qualif. tour 1" />
-      <input v-model.number="editForm.qualifyingRound2Points" type="number" placeholder="Points qualif. tour 2" />
-      <input v-model.number="editForm.runnerUpPoints" type="number" placeholder="Points du finaliste battu" />
+      <input v-model.number="editForm.qualifyingRound1Points" aria-label="Points qualif. tour 1" type="number" placeholder="Points qualif. tour 1" />
+      <input v-model.number="editForm.qualifyingRound2Points" aria-label="Points qualif. tour 2" type="number" placeholder="Points qualif. tour 2" />
+      <input v-model.number="editForm.runnerUpPoints" aria-label="Points du finaliste battu" type="number" placeholder="Points du finaliste battu" />
     </div>
 
     <h3 style="margin-top:20px">Barème de points par tour</h3>
@@ -72,8 +72,8 @@
         Taille du tableau de qualifs (doit être divisible par 2^nombre de tours, ex: 24 joueurs sur 2 tours = 6 qualifiés en groupes de 4).
       </p>
       <div class="inline" style="margin-top:10px">
-        <input v-model.number="qualifForm.drawSize" type="number" min="2" placeholder="Nb de joueurs en quali" />
-        <input v-model.number="qualifRoundsCount" type="number" min="1" max="4" placeholder="Nb de tours" />
+        <input v-model.number="qualifForm.drawSize" aria-label="Nombre de joueurs en qualif" type="number" min="2" placeholder="Nb de joueurs en quali" />
+        <input v-model.number="qualifRoundsCount" aria-label="Nombre de tours de qualif" type="number" min="1" max="4" placeholder="Nb de tours" />
       </div>
       <div class="inline" style="margin-top:10px">
         <label v-for="r in qualifForm.rounds" :key="r.roundOrder" style="flex-direction:column;align-items:flex-start;gap:4px">
@@ -97,21 +97,21 @@
     <div class="card" style="margin-top:20px">
       <h3>Ajouter au tableau ({{ drawEntries.length }} / {{ drawTournament?.drawSlots ?? '?' }})</h3>
       <form class="inline" style="margin-top:10px" @submit.prevent="submitEntry">
-        <input v-model.number="entryForm.drawPosition" type="number" min="1" :max="drawTournament?.drawSlots" placeholder="Position" required />
+        <input v-model.number="entryForm.drawPosition" aria-label="Position dans le tableau" type="number" min="1" :max="drawTournament?.drawSlots" placeholder="Position" required />
         <label><input v-model="entryForm.bye" type="checkbox" /> Bye</label>
 
         <template v-if="!entryForm.bye">
           <template v-if="!entryForm.newPlayer">
-            <select v-model.number="entryForm.playerId" required>
+            <select v-model.number="entryForm.playerId" aria-label="Joueur" required>
               <option disabled value="">Joueur</option>
               <option v-for="p in players" :key="p.id" :value="p.id">{{ p.lastName }} {{ p.firstName ?? '' }}</option>
             </select>
             <button type="button" class="secondary" @click="entryForm.newPlayer = true">+ Nouveau joueur</button>
           </template>
           <template v-else>
-            <input v-model="newPlayerForm.lastName" placeholder="Nom" required />
-            <input v-model="newPlayerForm.firstName" placeholder="Prénom" required />
-            <select v-model="newPlayerForm.nationality" required>
+            <input v-model="newPlayerForm.lastName" aria-label="Nom" placeholder="Nom" required />
+            <input v-model="newPlayerForm.firstName" aria-label="Prénom" placeholder="Prénom" required />
+            <select v-model="newPlayerForm.nationality" aria-label="Nationalité" required>
               <option disabled value="">Pays</option>
               <option v-for="c in countryNames" :key="c" :value="c">{{ c }}</option>
             </select>
@@ -119,8 +119,8 @@
           </template>
         </template>
 
-        <input v-if="!entryForm.bye" v-model.number="entryForm.seed" type="number" placeholder="Tête de série" />
-        <select v-if="!entryForm.bye" v-model="entryForm.entryType">
+        <input v-if="!entryForm.bye" v-model.number="entryForm.seed" aria-label="Tête de série" type="number" placeholder="Tête de série" />
+        <select v-if="!entryForm.bye" v-model="entryForm.entryType" aria-label="Type d'entrée">
           <option value="">Entrée directe</option>
           <option value="WILD_CARD">Wild card (WC)</option>
           <option value="QUALIFIER">Qualifié (Q)</option>
@@ -138,7 +138,7 @@
     </div>
   </template>
 
-  <div v-if="scoreEditorMatch" class="score-editor" @click.self="scoreEditorMatch = null">
+  <div v-if="scoreEditorMatch" class="score-editor" @click.self="scoreEditorMatch = null" @keydown.esc="scoreEditorMatch = null">
     <div class="card">
       <h3>Score du match</h3>
       <p class="matchup">{{ scoreEditorMatch.entry1.playerLastName }} vs {{ scoreEditorMatch.entry2.playerLastName }}</p>
@@ -150,7 +150,7 @@
         <input v-model="scoreForm.winnerEntryId" type="radio" :value="scoreEditorMatch.entry2.id" />
         {{ scoreEditorMatch.entry2.playerLastName }} gagne
       </label>
-      <input v-model="scoreForm.score" placeholder="Score set par set, ex: 63 46 63" />
+      <input v-model="scoreForm.score" aria-label="Score" placeholder="Score set par set, ex: 63 46 63" />
       <p v-if="scoreForm.score" class="field-hint" style="margin-top:4px">Enregistré comme : {{ formatMatchScore(scoreForm.score) }}</p>
       <div class="inline">
         <button @click="submitScore">Enregistrer</button>

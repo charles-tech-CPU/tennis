@@ -7,7 +7,7 @@
   </div>
 
   <div class="filters">
-    <input v-model="search" placeholder="Rechercher un joueur..." />
+    <input v-model="search" aria-label="Rechercher un joueur" placeholder="Rechercher un joueur..." />
   </div>
 
   <div v-if="filtered.length" class="table-card">
@@ -18,9 +18,9 @@
       <tbody>
         <tr v-for="p in filtered" :key="p.id">
           <template v-if="editingId === p.id">
-            <td><input v-model="editForm.lastName" required /></td>
-            <td><input v-model="editForm.firstName" /></td>
-            <td><input v-model="editForm.nationality" /></td>
+            <td><input v-model="editForm.lastName" aria-label="Nom" required /></td>
+            <td><input v-model="editForm.firstName" aria-label="Prénom" /></td>
+            <td><input v-model="editForm.nationality" aria-label="Nationalité" /></td>
             <td class="actions-cell">
               <button type="button" @click="saveEdit(p.id)">Enregistrer</button>
               <button type="button" class="secondary" @click="cancelEdit">Annuler</button>
@@ -48,9 +48,9 @@
 
   <h2 class="section-title">Ajouter un joueur</h2>
   <form class="card inline" @submit.prevent="submit">
-    <input v-model="form.lastName" placeholder="Nom" required />
-    <input v-model="form.firstName" placeholder="Prénom" />
-    <input v-model="form.nationality" placeholder="Nationalité" />
+    <input v-model="form.lastName" aria-label="Nom" placeholder="Nom" required />
+    <input v-model="form.firstName" aria-label="Prénom" placeholder="Prénom" />
+    <input v-model="form.nationality" aria-label="Nationalité" placeholder="Nationalité" />
     <button type="submit">Ajouter</button>
   </form>
 </template>

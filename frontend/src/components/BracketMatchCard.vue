@@ -2,7 +2,10 @@
   <div
     class="bracket-match"
     :class="{ completed: isDecided, clickable }"
+    :tabindex="clickable ? 0 : undefined"
+    :role="clickable ? 'button' : undefined"
     @click="handleClick"
+    @keydown.enter="handleClick"
   >
     <div v-if="match?.isQualifierRoot" class="bm-round-tag bm-round-tag-qualifier">✓ Qualifié</div>
     <div v-else-if="match?.roundLabel" class="bm-round-tag">

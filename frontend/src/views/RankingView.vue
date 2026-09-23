@@ -10,8 +10,8 @@
   </div>
 
   <div class="filters">
-    <input v-model="search" placeholder="Rechercher un joueur..." />
-    <select v-model="countryFilter">
+    <input v-model="search" aria-label="Rechercher un joueur" placeholder="Rechercher un joueur..." />
+    <select v-model="countryFilter" aria-label="Filtrer par pays">
       <option value="">Tous les pays</option>
       <option v-for="c in countries" :key="c.name" :value="c.name">{{ c.name }} ({{ c.count }})</option>
     </select>
@@ -56,9 +56,9 @@
           <th rowspan="2" class="group-header nc">Non comptabilisés</th>
         </tr>
         <tr>
-          <th v-for="s in grandSlamSlots" :key="s" class="num small-head">{{ slotHeader(s) }}</th>
-          <th v-for="s in mastersSlots" :key="s" class="num small-head">{{ slotHeader(s) }}</th>
-          <th v-for="i in 5" :key="i" class="num small-head">Meilleur {{ i }}</th>
+          <th v-for="s in grandSlamSlots" :key="s" scope="col" class="num small-head">{{ slotHeader(s) }}</th>
+          <th v-for="s in mastersSlots" :key="s" scope="col" class="num small-head">{{ slotHeader(s) }}</th>
+          <th v-for="i in 5" :key="i" scope="col" class="num small-head">Meilleur {{ i }}</th>
         </tr>
       </thead>
       <tbody>
