@@ -2,7 +2,7 @@
   <header class="topbar">
     <div class="brand">
       <span class="brand-mark">🎾</span>
-      <h1>Tennis Results</h1>
+      <h1>Tennis <span>Results</span></h1>
     </div>
     <nav>
       <router-link to="/">Tournois</router-link>

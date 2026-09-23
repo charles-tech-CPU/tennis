@@ -17,7 +17,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Titres</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topTournamentWinners" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -33,7 +33,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Victoires</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topMatchWinners" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -49,7 +49,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Titres</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topGrandSlamWinners" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -65,7 +65,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Titres</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topMasters1000Winners" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -81,7 +81,7 @@
         <thead><tr><th>#</th><th>Nation</th><th class="num">Titres</th></tr></thead>
         <tbody>
           <tr v-for="(n, i) in stats.topNationsByTitles" :key="n.nationality">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td class="nation-cell"><flag :nat="n.nationality" /></td>
             <td class="num">{{ n.count }}</td>
           </tr>
@@ -96,7 +96,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Finales perdues</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topRunnersUp" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -112,7 +112,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">V-D</th><th class="num">%</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topWinRate" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.wins }}-{{ p.losses }}</td>
@@ -129,7 +129,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Série</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.longestWinStreaks" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.streakLength }}</td>
@@ -145,7 +145,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th>Tournoi</th><th class="num">Parcours</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.bestQualifierRuns" :key="p.playerId + p.tournamentName">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td>{{ p.tournamentName }}</td>
@@ -162,7 +162,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Bagels</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topBagelsInflicted" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -178,7 +178,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Victoires</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.topEpicWins" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>
@@ -194,7 +194,7 @@
         <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Tournois</th></tr></thead>
         <tbody>
           <tr v-for="(p, i) in stats.mostActivePlayers" :key="p.playerId">
-            <td>{{ i + 1 }}</td>
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
             <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
             <td class="nation-cell"><flag :nat="p.nationality" /></td>
             <td class="num">{{ p.count }}</td>

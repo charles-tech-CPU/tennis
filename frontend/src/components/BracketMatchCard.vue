@@ -1,7 +1,7 @@
 <template>
   <div
     class="bracket-match"
-    :class="{ completed: isDecided, clickable }"
+    :class="{ completed: isDecided, clickable, pending: clickable && !isDecided }"
     :tabindex="clickable ? 0 : undefined"
     :role="clickable ? 'button' : undefined"
     @click="handleClick"
@@ -11,7 +11,7 @@
     <div v-else-if="match?.roundLabel" class="bm-round-tag">
       {{ match.roundLabel }} <span class="pts">{{ match.roundPoints }}p</span>
     </div>
-    <div class="bracket-slot" :class="{ winner: isWinner(match?.entry1) }">
+    <div class="bracket-slot" :class="slotClass(match?.entry1)">
       <span v-if="isFirstRound" class="slot-pos">{{ pos1 }}</span>
       <span class="name">
         <span class="fi-slot"><span v-if="flagIso(match?.entry1)" class="fi" :class="`fi-${flagIso(match?.entry1)}`"></span></span>
@@ -23,7 +23,7 @@
       </span>
       <button v-if="isFirstRound && match?.entry1" class="slot-remove" title="Retirer du tableau" @click.stop="emit('remove-entry', match.entry1)">×</button>
     </div>
-    <div class="bracket-slot" :class="{ winner: isWinner(match?.entry2) }">
+    <div class="bracket-slot" :class="slotClass(match?.entry2)">
       <span v-if="isFirstRound" class="slot-pos">{{ pos2 }}</span>
       <span class="name">
         <span class="fi-slot"><span v-if="flagIso(match?.entry2)" class="fi" :class="`fi-${flagIso(match?.entry2)}`"></span></span>
@@ -74,6 +74,13 @@ function flagIso(entry) {
 
 function isWinner(entry) {
   return entry && props.match?.winnerEntryId === entry.id
+}
+
+// Vainqueur mis en avant, perdant estompe - seulement une fois le match
+// tranche (sinon les deux joueurs restent a egalite visuelle).
+function slotClass(entry) {
+  if (!props.match?.winnerEntryId || !entry) return {}
+  return isWinner(entry) ? { winner: true } : { loser: true }
 }
 
 function handleClick() {

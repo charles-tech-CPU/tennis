@@ -1,17 +1,22 @@
 <template>
   <router-link to="/" class="back-link">← Tous les tournois</router-link>
 
-  <div class="page-header">
+  <div class="page-header tournament-hero" :class="`hero-${(tournament?.category ?? '').toLowerCase()}`">
     <div>
-      <h1>{{ tournament?.name ?? '...' }}</h1>
-      <p v-if="tournament" class="subtitle inline">
+      <div v-if="tournament" class="hero-tags">
         <span class="tag" :class="categoryTagClass(tournament.category)">{{ categoryLabel(tournament.category) }}</span>
         <span v-if="mandatorySlotLabel(tournament.mandatorySlot)" class="tag tag-grass">{{ mandatorySlotLabel(tournament.mandatorySlot) }}</span>
-        Saison {{ tournament.season }}
-        <span v-if="tournament.weekNumber">· Semaine {{ tournament.weekNumber }}</span>
-        · {{ tournament.country ?? 'Pays non renseigné' }}
-        · Tableau {{ tournament.drawSize }} ({{ tournament.drawSlots }} cases)
-      </p>
+      </div>
+      <h1>{{ tournament?.name ?? '...' }}</h1>
+      <div v-if="tournament" class="hero-meta">
+        <span class="hero-chip nation-cell">
+          <span v-if="countryFlagIso(tournament.country)" class="fi" :class="`fi-${countryFlagIso(tournament.country)}`"></span>
+          {{ tournament.country ?? 'Pays non renseigné' }}
+        </span>
+        <span class="hero-chip">Saison {{ tournament.season }}</span>
+        <span v-if="tournament.weekNumber" class="hero-chip">Semaine {{ tournament.weekNumber }}</span>
+        <span class="hero-chip">Tableau {{ tournament.drawSize }} ({{ tournament.drawSlots }} cases)</span>
+      </div>
     </div>
     <div class="actions">
       <button class="secondary" @click="toggleEdit">{{ editing ? 'Fermer' : 'Modifier les réglages' }}</button>
@@ -164,7 +169,7 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import api from '../services/api'
 import BracketView from '../components/BracketView.vue'
-import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, COUNTRY_NAMES } from '../labels'
+import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, countryFlagIso, COUNTRY_NAMES } from '../labels'
 
 const countryNames = COUNTRY_NAMES
 

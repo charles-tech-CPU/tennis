@@ -6,18 +6,42 @@
        de securite pour les cas extremes (tres grand tableau, tres petit
        ecran) ou meme la largeur minimale ne suffirait pas. Voir
        recomputeLayout() plus bas. -->
+  <!-- .bracket-bleed reste dans le flux normal (largeur de la page) et sert
+       de repere de mesure ; .bracket-viewport deborde de part et d'autre
+       jusqu'aux bords de la fenetre (marges negatives calculees dans
+       recomputeLayout) pour que les grands tableaux profitent de tout
+       l'ecran au lieu d'etre ecrases dans la colonne centrale. -->
+  <div ref="bleedEl" class="bracket-bleed">
   <div ref="viewportEl" class="bracket-viewport" :style="viewportStyle">
     <div ref="scaledEl" class="bracket-scaled" :style="scaledStyle">
       <!-- Tableau a elimination directe "classique" (1 seul vainqueur en
            finale) : deux moities miroir qui convergent vers la finale au
            centre, avec les lignes de progression du tableau papier. -->
-      <div v-if="isSingleElim" class="bracket-tree" :style="{ '--match-w': `${matchW}px` }">
-        <BracketTreeNode :node="leftTree" :mirror="false" @select="onClickMatch" @remove-entry="onRemoveEntry" />
-        <div class="bracket-final">
-          <span class="bracket-final-badge">🏆 Finale</span>
-          <BracketMatchCard :match="finalMatch" @select="onClickMatch" @remove-entry="onRemoveEntry" />
+      <div v-if="isSingleElim" class="bracket-board" :style="{ '--match-w': `${matchW}px` }">
+        <!-- Un en-tete par colonne (tour + points) plutot qu'une etiquette
+             repetee sur chaque carte : meme largeur/gap que les cartes. -->
+        <div class="bracket-rounds">
+          <div v-for="r in headerRounds" :key="r.key" class="bracket-round-head" :class="{ final: r.final }">
+            <span class="label">{{ r.label }}</span>
+            <span v-if="r.points != null" class="pts">{{ r.points }} pts</span>
+          </div>
         </div>
-        <BracketTreeNode :node="rightTree" :mirror="true" @select="onClickMatch" @remove-entry="onRemoveEntry" />
+        <div class="bracket-tree">
+          <BracketTreeNode :node="leftTree" :mirror="false" @select="onClickMatch" @remove-entry="onRemoveEntry" />
+          <div class="bracket-final">
+            <span class="bracket-final-badge">🏆 Finale</span>
+            <BracketMatchCard :match="finalMatch" @select="onClickMatch" @remove-entry="onRemoveEntry" />
+            <div v-if="champion" class="bracket-champion">
+              <span class="cup" aria-hidden="true">🏆</span>
+              <span class="caption">Vainqueur</span>
+              <span class="who">
+                <span v-if="countryFlagIso(champion.playerNationality)" class="fi" :class="`fi-${countryFlagIso(champion.playerNationality)}`"></span>
+                {{ champion.playerFirstName ?? '' }} {{ champion.playerLastName }}
+              </span>
+            </div>
+          </div>
+          <BracketTreeNode :node="rightTree" :mirror="true" @select="onClickMatch" @remove-entry="onRemoveEntry" />
+        </div>
       </div>
 
       <!-- Tableau de qualifications : plusieurs groupes independants, chacun
@@ -25,11 +49,19 @@
            qualifie (pas de finale commune, donc pas de vue miroir globale -
            mais chaque groupe garde ses lignes de progression). -->
       <div v-else class="bracket-groups">
-        <div v-for="g in qualifyingGroups" :key="g.match?.id ?? g.depth" class="bracket-group">
+        <div v-for="(g, i) in qualifyingGroups" :key="g.match?.id ?? g.depth" class="bracket-group">
+          <div class="bracket-group-title">Groupe {{ i + 1 }}</div>
+          <div class="bracket-rounds">
+            <div v-for="r in groupHeaderRounds(g.depth)" :key="r.key" class="bracket-round-head">
+              <span class="label">{{ r.label }}</span>
+              <span v-if="r.points != null" class="pts">{{ r.points }} pts</span>
+            </div>
+          </div>
           <BracketTreeNode :node="g" :mirror="false" @select="onClickMatch" @remove-entry="onRemoveEntry" />
         </div>
       </div>
     </div>
+  </div>
   </div>
 </template>
 
@@ -38,6 +70,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import BracketMatchCard from './BracketMatchCard.vue'
 import BracketTreeNode from './BracketTreeNode.vue'
 import { buildBracketNode, fitMatchWidth, MATCH_W_MAX } from '../bracketLayout'
+import { countryFlagIso } from '../labels'
 
 const props = defineProps({
   rounds: { type: Array, default: () => [] },
@@ -75,6 +108,34 @@ const finalMatch = computed(() => isSingleElim.value ? matchesByKey.value.get(`$
 const leftTree = computed(() => isSingleElim.value ? buildBracketNode(matchesByKey.value, totalRounds.value - 1, 1) : null)
 const rightTree = computed(() => isSingleElim.value ? buildBracketNode(matchesByKey.value, totalRounds.value - 1, 2) : null)
 
+function roundHead(roundOrder, extra = {}) {
+  const r = roundsByOrder.value[roundOrder]
+  return { key: `${roundOrder}-${extra.side ?? ''}`, label: r?.roundLabel ?? `Tour ${roundOrder}`, points: r?.points, ...extra }
+}
+
+// Colonnes du tableau principal, de gauche a droite : 1er tour -> demi,
+// finale, puis demi -> 1er tour (moitie miroir).
+const headerRounds = computed(() => {
+  if (!isSingleElim.value) return []
+  const n = totalRounds.value
+  const left = Array.from({ length: n - 1 }, (_, i) => roundHead(i + 1, { side: 'L' }))
+  const right = left.toReversed().map(h => ({ ...h, key: h.key.replace('-L', '-R') }))
+  return [...left, roundHead(n, { side: 'F', final: true }), ...right]
+})
+
+// Qualifs : un groupe de profondeur `depth` couvre les tours
+// (totalRounds - depth) -> totalRounds.
+function groupHeaderRounds(depth) {
+  const n = totalRounds.value
+  return Array.from({ length: depth + 1 }, (_, i) => roundHead(n - depth + i))
+}
+
+const champion = computed(() => {
+  const m = finalMatch.value
+  if (!m?.winnerEntryId) return null
+  return [m.entry1, m.entry2].find(e => e?.id === m.winnerEntryId) ?? null
+})
+
 // Qualifs : un mini-arbre independant par vainqueur de tour final (= par
 // groupe), marque isQualifierRoot pour que sa carte affiche "Qualifie" plutot
 // que son libelle de tour habituel.
@@ -90,17 +151,31 @@ const qualifyingGroups = computed(() => {
 })
 
 // --- Adaptation pour tenir sur un ecran sans scroll horizontal ---
+// Padding horizontal + bordure de .bracket-board (style.css), a retirer de
+// la largeur disponible pour les cartes.
+const BOARD_PAD_X = 40
+const bleedEl = ref(null)
 const viewportEl = ref(null)
+const bleed = ref({ left: 0, right: 0 })
 const scaledEl = ref(null)
 const matchW = ref(MATCH_W_MAX)
 const scale = ref(1)
 const naturalHeight = ref(0)
 
 async function recomputeLayout() {
-  if (!viewportEl.value || !scaledEl.value) return
-  const available = viewportEl.value.clientWidth
+  if (!bleedEl.value || !viewportEl.value || !scaledEl.value) return
+  // Debordement jusqu'a 16px des bords de la fenetre (clientWidth exclut la
+  // barre de defilement verticale, contrairement a 100vw).
+  const rect = bleedEl.value.getBoundingClientRect()
+  const docW = document.documentElement.clientWidth
+  const gutter = 16
+  bleed.value = {
+    left: Math.max(0, Math.floor(rect.left - gutter)),
+    right: Math.max(0, Math.floor(docW - rect.right - gutter))
+  }
+  const available = rect.width + bleed.value.left + bleed.value.right
   matchW.value = isSingleElim.value
-    ? fitMatchWidth(leftTree.value?.depth ?? 0, available)
+    ? fitMatchWidth(leftTree.value?.depth ?? 0, available - BOARD_PAD_X)
     : MATCH_W_MAX
 
   await nextTick()
@@ -112,17 +187,23 @@ async function recomputeLayout() {
 const scaledStyle = computed(() => scale.value < 1
   ? { transform: `scale(${scale.value})`, transformOrigin: 'top left' }
   : {})
-const viewportStyle = computed(() => scale.value < 1
-  ? { height: `${naturalHeight.value * scale.value}px` }
-  : {})
+const viewportStyle = computed(() => ({
+  marginLeft: `-${bleed.value.left}px`,
+  marginRight: `-${bleed.value.right}px`,
+  ...(scale.value < 1 ? { height: `${naturalHeight.value * scale.value}px` } : {})
+}))
 
 let resizeObserver
 onMounted(() => {
   resizeObserver = new ResizeObserver(() => recomputeLayout())
-  resizeObserver.observe(viewportEl.value)
+  resizeObserver.observe(bleedEl.value)
+  window.addEventListener('resize', recomputeLayout)
   nextTick(recomputeLayout)
 })
-onBeforeUnmount(() => resizeObserver?.disconnect())
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+  window.removeEventListener('resize', recomputeLayout)
+})
 watch([leftTree, rightTree, qualifyingGroups], () => nextTick(recomputeLayout))
 
 function onClickMatch(match) {

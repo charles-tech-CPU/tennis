@@ -20,7 +20,7 @@
 
   <div class="legend">
     <span class="legend-item"><span class="legend-dot status-completed"></span>Terminé</span>
-    <span class="legend-item">Chaque tournoi en cours a sa propre couleur (la même que dans le classement)</span>
+    <span class="legend-item"><span class="legend-dot status-live"></span>En cours — chaque tournoi a sa propre couleur (la même que dans le classement)</span>
   </div>
 
   <div v-if="filtered.length" class="table-card">
@@ -37,9 +37,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="t in filtered" :key="t.id" :class="{ 'status-completed': t.status === 'COMPLETED' }" :style="inProgressRowStyle(t)">
-          <td>{{ t.weekNumber ?? '—' }}</td>
-          <td><router-link :to="`/tournaments/${t.id}`">{{ t.name }}</router-link></td>
+        <tr v-for="t in filtered" :key="t.id" :class="{ 'status-completed': t.status === 'COMPLETED', 'status-in-progress': isLive(t) }" :style="inProgressRowStyle(t)">
+          <td class="week-cell">{{ t.weekNumber ?? '—' }}</td>
+          <td class="name-cell"><router-link :to="`/tournaments/${t.id}`">{{ t.name }}</router-link></td>
           <td>
             <span class="tag" :class="categoryTagClass(t.category)">{{ categoryLabel(t.category) }}</span>
             <span v-if="mandatorySlotLabel(t.mandatorySlot)" class="tag tag-grass" style="margin-left:4px">{{ mandatorySlotLabel(t.mandatorySlot) }}</span>
@@ -49,12 +49,16 @@
             {{ t.country ?? '—' }}
           </td>
           <td>{{ t.season }}</td>
-          <td>{{ t.drawSize }} ({{ t.drawSlots }} cases)</td>
-          <td class="nation-cell">
+          <td class="nowrap">{{ t.drawSize }} ({{ t.drawSlots }} cases)</td>
+          <td class="nation-cell winner-cell">
             <template v-if="t.winner">
+              <span class="trophy" aria-hidden="true">🏆</span>
               <span v-if="countryFlagIso(t.winner.nationality)" class="fi" :class="`fi-${countryFlagIso(t.winner.nationality)}`"></span>
               {{ t.winner.lastName }} {{ t.winner.firstName ?? '' }}
             </template>
+            <span v-else-if="isLive(t)" class="status-pill live">
+              <span class="legend-dot" :style="{ background: hslColor(t.colorHue) }"></span>En cours
+            </span>
             <span v-else>—</span>
           </td>
         </tr>
@@ -122,9 +126,15 @@ const form = reactive({
 
 const seasons = computed(() => [...new Set(tournaments.value.map(t => t.season))].sort((a, b) => b - a))
 
+function isLive(t) {
+  return t.status === 'IN_PROGRESS' && t.colorHue != null
+}
+
+// Tournoi en cours : bandeau de sa couleur a gauche + fond tres leger de la
+// meme teinte (voir tbody tr.status-in-progress dans style.css).
 function inProgressRowStyle(t) {
-  if (t.status !== 'IN_PROGRESS' || t.colorHue == null) return {}
-  return { background: hslColor(t.colorHue, 70, 91) }
+  if (!isLive(t)) return {}
+  return { '--row-accent': hslColor(t.colorHue), '--row-tint': hslColor(t.colorHue, 70, 95) }
 }
 
 const filtered = computed(() => tournaments.value.filter(t => {
