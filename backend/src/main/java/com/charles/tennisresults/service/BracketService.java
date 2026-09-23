@@ -87,17 +87,7 @@ public class BracketService {
             // Les matchs du 1er tour sont normalement deja tous crees par
             // initializeSkeleton a la creation du tournoi ; ce fallback ne sert que
             // si le tableau a ete elargi depuis (securite, ne devrait pas arriver en v1).
-            int currentPos = pos;
-            Match match = matchRepository
-                    .findByTournamentIdAndRoundOrderAndPositionInRound(tournamentId, 1, pos)
-                    .orElseGet(() -> {
-                        Match m = new Match();
-                        m.setTournament(tournament);
-                        m.setRoundOrder(1);
-                        m.setPositionInRound(currentPos);
-                        m.setStatus(MatchStatus.PENDING);
-                        return m;
-                    });
+            Match match = round1Match(tournament, pos);
 
             match.setEntry1(entryA);
             match.setEntry2(entryB);
@@ -122,6 +112,19 @@ public class BracketService {
                 matchRepository.save(match);
             }
         }
+    }
+
+    private Match round1Match(Tournament tournament, int position) {
+        return matchRepository
+                .findByTournamentIdAndRoundOrderAndPositionInRound(tournament.getId(), 1, position)
+                .orElseGet(() -> {
+                    Match m = new Match();
+                    m.setTournament(tournament);
+                    m.setRoundOrder(1);
+                    m.setPositionInRound(position);
+                    m.setStatus(MatchStatus.PENDING);
+                    return m;
+                });
     }
 
     private Entry findAtPosition(List<Entry> entries, int position) {

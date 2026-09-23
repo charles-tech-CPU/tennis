@@ -93,11 +93,7 @@ public class RankingService {
     private Set<Long> activeTournamentIds(List<Tournament> allMains, TournamentProgress progress) {
         Map<String, List<Tournament>> byIdentity = new HashMap<>();
         for (Tournament t : allMains) {
-            String key = t.getMandatorySlot() != null
-                    ? "SLOT:" + t.getMandatorySlot()
-                    : "NAME_WEEK:" + t.getName().trim().toUpperCase() + "@"
-                            + (t.getWeekNumber() != null ? t.getWeekNumber() : "id" + t.getId());
-            byIdentity.computeIfAbsent(key, k -> new ArrayList<>()).add(t);
+            byIdentity.computeIfAbsent(identityKey(t), k -> new ArrayList<>()).add(t);
         }
 
         Set<Long> active = new HashSet<>();
@@ -114,6 +110,39 @@ public class RankingService {
         return active;
     }
 
+    /** Contexte commun a tous les joueurs d'un meme calcul de classement. */
+    private record RankingContext(
+            Map<Long, Tournament> tournamentsById, TournamentProgress progress, Map<Long, Integer> hueByTournamentId) {
+
+        /** Des qualifs comptent pour leur tournoi principal (meme tournoi pour le classement). */
+        Tournament effective(Tournament t) {
+            return t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
+        }
+    }
+
+    /**
+     * Resultats d'un joueur, fusionnes par tournoi (principal + qualifs, comme
+     * dans le fichier Excel), et tournois ou il est encore en jeu.
+     */
+    private record PlayerResults(
+            Map<Long, Integer> pointsByTournamentId,
+            Map<Long, Tournament> tournamentById,
+            Map<Long, LiveTournamentDto> liveByTournamentId) {}
+
+    /** Tournois d'un joueur repartis entre cases obligatoires, Monte-Carlo et "autres" (tries par points). */
+    private record Buckets(
+            Map<MandatorySlot, TournamentPointsDto> mandatorySlots,
+            TournamentPointsDto monteCarlo,
+            List<TournamentPointsDto> others) {}
+
+    private static String identityKey(Tournament t) {
+        if (t.getMandatorySlot() != null) {
+            return "SLOT:" + t.getMandatorySlot();
+        }
+        String week = t.getWeekNumber() != null ? String.valueOf(t.getWeekNumber()) : "id" + t.getId();
+        return "NAME_WEEK:" + t.getName().trim().toUpperCase() + "@" + week;
+    }
+
     @Transactional(readOnly = true)
     public List<RankingRowDto> computeRanking() {
         Map<Long, Tournament> tournamentsById =
@@ -122,122 +151,128 @@ public class RankingService {
         List<Tournament> allMains =
                 tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, allMains);
-        Map<Long, Integer> hueByTournamentId = progress.hueByTournamentId(allMains);
+        RankingContext context = new RankingContext(tournamentsById, progress, progress.hueByTournamentId(allMains));
 
         Set<Long> activeTournamentIds = activeTournamentIds(allMains, progress);
 
-        List<Entry> entries = entryRepository.findByPlayerIsNotNull().stream()
-                .filter(entry -> {
-                    Tournament t = entry.getTournament();
-                    Tournament effective =
-                            t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
-                    return activeTournamentIds.contains(effective.getId());
-                })
-                .toList();
-
-        Map<Player, List<Entry>> byPlayer = entries.stream().collect(Collectors.groupingBy(Entry::getPlayer));
+        Map<Player, List<Entry>> byPlayer = entryRepository.findByPlayerIsNotNull().stream()
+                .filter(entry -> activeTournamentIds.contains(
+                        context.effective(entry.getTournament()).getId()))
+                .collect(Collectors.groupingBy(Entry::getPlayer));
 
         List<RankingRowDto> rows = new ArrayList<>();
         for (Map.Entry<Player, List<Entry>> e : byPlayer.entrySet()) {
-            Player player = e.getKey();
-
-            // Fusionne les points d'un tournoi principal et de ses qualifs (meme
-            // tournoi pour le classement, comme dans le fichier Excel).
-            Map<Long, Integer> pointsByTournamentId = new LinkedHashMap<>();
-            Map<Long, Tournament> tournamentByKey = new HashMap<>();
-            Map<Long, LiveTournamentDto> liveByTournamentId = new LinkedHashMap<>();
-
-            for (Entry entry : e.getValue()) {
-                EntryOutcome outcome = pointsEarned(entry);
-                Tournament t = entry.getTournament();
-                Tournament effective = t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
-
-                if (outcome.points() > 0) {
-                    pointsByTournamentId.merge(effective.getId(), outcome.points(), Integer::sum);
-                    tournamentByKey.putIfAbsent(effective.getId(), effective);
-                }
-                if (outcome.stillAlive() && progress.statusOf(effective) == TournamentStatus.IN_PROGRESS) {
-                    Integer hue = hueByTournamentId.get(effective.getId());
-                    if (hue != null) {
-                        liveByTournamentId.putIfAbsent(
-                                effective.getId(), new LiveTournamentDto(effective.getId(), effective.getName(), hue));
-                    }
-                }
+            RankingRowDto row = rankingRow(e.getKey(), collectResults(e.getValue(), context));
+            if (row != null) {
+                rows.add(row);
             }
-
-            Map<MandatorySlot, TournamentPointsDto> mandatorySlots = new EnumMap<>(MandatorySlot.class);
-            TournamentPointsDto monteCarlo = null;
-            List<TournamentPointsDto> othersAll = new ArrayList<>();
-
-            for (Map.Entry<Long, Integer> pe : pointsByTournamentId.entrySet()) {
-                Tournament tournament = tournamentByKey.get(pe.getKey());
-                TournamentPointsDto dto =
-                        new TournamentPointsDto(tournament.getId(), tournament.getName(), pe.getValue());
-                MandatorySlot slot = tournament.getMandatorySlot();
-                if (slot == MandatorySlot.MONTE_CARLO) {
-                    monteCarlo = dto;
-                } else if (slot != null) {
-                    mandatorySlots.put(slot, dto);
-                } else {
-                    othersAll.add(dto);
-                }
-            }
-
-            othersAll.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
-            int mandatoryTotal = mandatorySlots.values().stream()
-                    .mapToInt(TournamentPointsDto::points)
-                    .sum();
-            List<TournamentPointsDto> bestOthers = othersAll.stream().limit(5).toList();
-            int best5 =
-                    bestOthers.stream().mapToInt(TournamentPointsDto::points).sum();
-            TournamentPointsDto sixth = othersAll.size() > 5 ? othersAll.get(5) : null;
-
-            int monteCarloPts = monteCarlo != null ? monteCarlo.points() : 0;
-            int sixthPts = sixth != null ? sixth.points() : 0;
-            TournamentPointsDto replacement = monteCarloPts >= sixthPts ? monteCarlo : sixth;
-            int replacementValue = Math.max(monteCarloPts, sixthPts);
-            int total = mandatoryTotal + best5 + replacementValue;
-            if (total == 0) {
-                continue; // aucun resultat acte encore comptabilisable : inutile dans le classement
-            }
-
-            List<TournamentPointsDto> nonCounted = new ArrayList<>();
-            if (othersAll.size() > 6) {
-                nonCounted.addAll(othersAll.subList(6, othersAll.size()));
-            }
-            if (monteCarlo != null && monteCarlo != replacement) {
-                nonCounted.add(monteCarlo);
-            }
-            if (sixth != null && sixth != replacement) {
-                nonCounted.add(sixth);
-            }
-            nonCounted.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
-
-            substituteMissingMandatorySlots(mandatorySlots, nonCounted);
-            mandatoryTotal = mandatorySlots.values().stream()
-                    .mapToInt(TournamentPointsDto::points)
-                    .sum();
-            total = mandatoryTotal + best5 + replacementValue;
-
-            rows.add(new RankingRowDto(
-                    player.getId(),
-                    player.getLastName(),
-                    player.getFirstName(),
-                    player.getNationality(),
-                    mandatorySlots,
-                    monteCarlo,
-                    bestOthers,
-                    replacement,
-                    nonCounted,
-                    mandatoryTotal,
-                    best5,
-                    replacementValue,
-                    total,
-                    new ArrayList<>(liveByTournamentId.values())));
         }
 
         rows.sort(Comparator.comparingInt(RankingRowDto::total).reversed());
         return rows;
+    }
+
+    private PlayerResults collectResults(List<Entry> playerEntries, RankingContext context) {
+        Map<Long, Integer> pointsByTournamentId = new LinkedHashMap<>();
+        Map<Long, Tournament> tournamentById = new HashMap<>();
+        Map<Long, LiveTournamentDto> liveByTournamentId = new LinkedHashMap<>();
+
+        for (Entry entry : playerEntries) {
+            EntryOutcome outcome = pointsEarned(entry);
+            Tournament effective = context.effective(entry.getTournament());
+
+            if (outcome.points() > 0) {
+                pointsByTournamentId.merge(effective.getId(), outcome.points(), Integer::sum);
+                tournamentById.putIfAbsent(effective.getId(), effective);
+            }
+            Integer hue = context.hueByTournamentId().get(effective.getId());
+            if (outcome.stillAlive()
+                    && hue != null
+                    && context.progress().statusOf(effective) == TournamentStatus.IN_PROGRESS) {
+                liveByTournamentId.putIfAbsent(
+                        effective.getId(), new LiveTournamentDto(effective.getId(), effective.getName(), hue));
+            }
+        }
+        return new PlayerResults(pointsByTournamentId, tournamentById, liveByTournamentId);
+    }
+
+    private Buckets classify(PlayerResults results) {
+        Map<MandatorySlot, TournamentPointsDto> mandatorySlots = new EnumMap<>(MandatorySlot.class);
+        TournamentPointsDto monteCarlo = null;
+        List<TournamentPointsDto> others = new ArrayList<>();
+
+        for (Map.Entry<Long, Integer> pe : results.pointsByTournamentId().entrySet()) {
+            Tournament tournament = results.tournamentById().get(pe.getKey());
+            TournamentPointsDto dto = new TournamentPointsDto(tournament.getId(), tournament.getName(), pe.getValue());
+            MandatorySlot slot = tournament.getMandatorySlot();
+            if (slot == MandatorySlot.MONTE_CARLO) {
+                monteCarlo = dto;
+            } else if (slot != null) {
+                mandatorySlots.put(slot, dto);
+            } else {
+                others.add(dto);
+            }
+        }
+        others.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
+        return new Buckets(mandatorySlots, monteCarlo, others);
+    }
+
+    /** Ligne de classement du joueur, ou null s'il n'a encore aucun point comptabilisable. */
+    private RankingRowDto rankingRow(Player player, PlayerResults results) {
+        Buckets buckets = classify(results);
+        Map<MandatorySlot, TournamentPointsDto> mandatorySlots = buckets.mandatorySlots();
+        TournamentPointsDto monteCarlo = buckets.monteCarlo();
+        List<TournamentPointsDto> othersAll = buckets.others();
+
+        List<TournamentPointsDto> bestOthers = othersAll.stream().limit(5).toList();
+        int best5 = bestOthers.stream().mapToInt(TournamentPointsDto::points).sum();
+        TournamentPointsDto sixth = othersAll.size() > 5 ? othersAll.get(5) : null;
+
+        int monteCarloPts = pointsOf(monteCarlo);
+        int sixthPts = pointsOf(sixth);
+        TournamentPointsDto replacement = monteCarloPts >= sixthPts ? monteCarlo : sixth;
+        int replacementValue = Math.max(monteCarloPts, sixthPts);
+        if (sumOf(mandatorySlots) + best5 + replacementValue == 0) {
+            return null; // aucun resultat acte encore comptabilisable : inutile dans le classement
+        }
+
+        List<TournamentPointsDto> nonCounted = new ArrayList<>();
+        if (othersAll.size() > 6) {
+            nonCounted.addAll(othersAll.subList(6, othersAll.size()));
+        }
+        for (TournamentPointsDto candidate : Arrays.asList(monteCarlo, sixth)) {
+            if (candidate != null && candidate != replacement) {
+                nonCounted.add(candidate);
+            }
+        }
+        nonCounted.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
+
+        substituteMissingMandatorySlots(mandatorySlots, nonCounted);
+        int mandatoryTotal = sumOf(mandatorySlots);
+
+        return new RankingRowDto(
+                player.getId(),
+                player.getLastName(),
+                player.getFirstName(),
+                player.getNationality(),
+                mandatorySlots,
+                monteCarlo,
+                bestOthers,
+                replacement,
+                nonCounted,
+                mandatoryTotal,
+                best5,
+                replacementValue,
+                mandatoryTotal + best5 + replacementValue,
+                new ArrayList<>(results.liveByTournamentId().values()));
+    }
+
+    private static int pointsOf(TournamentPointsDto dto) {
+        return dto != null ? dto.points() : 0;
+    }
+
+    private static int sumOf(Map<MandatorySlot, TournamentPointsDto> slots) {
+        return slots.values().stream().mapToInt(TournamentPointsDto::points).sum();
     }
 
     /**
@@ -256,19 +291,15 @@ public class RankingService {
     private void substituteMissingMandatorySlots(
             Map<MandatorySlot, TournamentPointsDto> mandatorySlots, List<TournamentPointsDto> nonCounted) {
         Iterator<TournamentPointsDto> candidates = nonCounted.iterator();
-        for (MandatorySlot slot : MandatorySlot.values()) {
-            if (slot == MandatorySlot.MONTE_CARLO || mandatorySlots.containsKey(slot)) {
-                continue;
+        for (MandatorySlot slot : MANDATORY_EXCLUDING_MC) {
+            if (!mandatorySlots.containsKey(slot) && candidates.hasNext()) {
+                TournamentPointsDto candidate = candidates.next();
+                candidates.remove();
+                mandatorySlots.put(
+                        slot,
+                        new TournamentPointsDto(
+                                candidate.tournamentId(), candidate.tournamentName(), candidate.points(), true));
             }
-            if (!candidates.hasNext()) {
-                break;
-            }
-            TournamentPointsDto candidate = candidates.next();
-            candidates.remove();
-            mandatorySlots.put(
-                    slot,
-                    new TournamentPointsDto(
-                            candidate.tournamentId(), candidate.tournamentName(), candidate.points(), true));
         }
     }
 
@@ -290,11 +321,7 @@ public class RankingService {
         // groupes independants produisent chacun un qualifie au dernier tour
         // configure (pointsByRound.size()), contrairement au tableau principal ou
         // totalRounds se deduit de la taille du tableau (une seule finale).
-        int totalRounds = tournament.isQualifying()
-                ? pointsByRound.size()
-                : (tournament.getDrawSize() == null
-                        ? 0
-                        : RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(tournament.getDrawSize())));
+        int totalRounds = totalRounds(tournament, pointsByRound);
         if (totalRounds == 0) {
             return new EntryOutcome(0, false);
         }
@@ -339,6 +366,16 @@ public class RankingService {
         } else {
             return new EntryOutcome(eliminationValue(tournament, pointsByRound, r, totalRounds), false);
         }
+    }
+
+    private static int totalRounds(Tournament tournament, Map<Integer, Integer> pointsByRound) {
+        if (tournament.isQualifying()) {
+            return pointsByRound.size();
+        }
+        if (tournament.getDrawSize() == null) {
+            return 0;
+        }
+        return RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(tournament.getDrawSize()));
     }
 
     // Bareme officiel ATP des qualifications de Grand Chelem (3 tours, valeurs

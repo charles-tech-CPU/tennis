@@ -39,7 +39,7 @@ public class EntryService {
     public List<EntryDto> findByTournament(Long tournamentId) {
         return entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId).stream()
                 .sorted(Comparator.comparing(Entry::getDrawPosition))
-                .map(this::toDto)
+                .map(EntryDto::from)
                 .toList();
     }
 
@@ -76,7 +76,7 @@ public class EntryService {
 
         entry = entryRepository.save(entry);
         bracketService.syncRound1FromEntries(tournamentId);
-        return toDto(entry);
+        return EntryDto.from(entry);
     }
 
     @Transactional
@@ -129,13 +129,11 @@ public class EntryService {
 
         for (Entry existing : entryRepository.findByPlayerId(player.getId())) {
             Tournament other = existing.getTournament();
-            if (other.getId().equals(tournament.getId()) || other.getId().equals(siblingId)) {
-                continue;
-            }
-            if (isExemptFromWeekConflict(other)) {
-                continue;
-            }
-            if (Objects.equals(other.getSeason(), tournament.getSeason())
+            boolean sameEvent =
+                    other.getId().equals(tournament.getId()) || other.getId().equals(siblingId);
+            if (!sameEvent
+                    && !isExemptFromWeekConflict(other)
+                    && Objects.equals(other.getSeason(), tournament.getSeason())
                     && Objects.equals(other.getWeekNumber(), tournament.getWeekNumber())) {
                 throw new IllegalArgumentException(player.getLastName() + " est deja inscrit a " + other.getName()
                         + " la meme semaine (semaine " + tournament.getWeekNumber() + ").");
@@ -154,19 +152,5 @@ public class EntryService {
     private static boolean isExemptFromWeekConflict(Tournament t) {
         return t.getName() != null
                 && WEEK_CONFLICT_EXEMPT_NAMES.contains(t.getName().toUpperCase());
-    }
-
-    private EntryDto toDto(Entry e) {
-        return new EntryDto(
-                e.getId(),
-                e.getTournament().getId(),
-                e.getPlayer() != null ? e.getPlayer().getId() : null,
-                e.getPlayer() != null ? e.getPlayer().getLastName() : (e.isBye() ? "BYE" : null),
-                e.getPlayer() != null ? e.getPlayer().getFirstName() : null,
-                e.getPlayer() != null ? e.getPlayer().getNationality() : null,
-                e.getDrawPosition(),
-                e.getSeed(),
-                e.getEntryType(),
-                e.isBye());
     }
 }

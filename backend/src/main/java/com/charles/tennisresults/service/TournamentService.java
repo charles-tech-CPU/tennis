@@ -100,7 +100,7 @@ public class TournamentService {
 
         int totalRounds = RoundLabels.roundCount(drawSlots);
         for (int r = 1; r <= totalRounds; r++) {
-            int pts = (r - 1) < points.size() ? points.get(r - 1) : points.get(points.size() - 1);
+            int pts = points.get(Math.min(r - 1, points.size() - 1));
             TournamentRound round = new TournamentRound(t, r, RoundLabels.labelFor(r, totalRounds), pts);
             tournamentRoundRepository.save(round);
         }
@@ -182,7 +182,7 @@ public class TournamentService {
         int totalRounds = RoundLabels.roundCount(drawSlots);
         List<Integer> points = CategoryDefaults.pointsFor(t.getCategory(), drawSlots);
         for (int r = 1; r <= totalRounds; r++) {
-            int pts = (r - 1) < points.size() ? points.get(r - 1) : points.get(points.size() - 1);
+            int pts = points.get(Math.min(r - 1, points.size() - 1));
             tournamentRoundRepository.save(new TournamentRound(t, r, RoundLabels.labelFor(r, totalRounds), pts));
         }
         bracketService.initializeSkeleton(t, drawSlots);

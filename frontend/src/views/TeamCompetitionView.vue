@@ -420,6 +420,24 @@ function setsOf(score) {
     .map(m => [Number(m[1]), Number(m[2])])
 }
 
+// a = ligne de l'equipe 1, b = ligne de l'equipe 2 du match r (termine).
+function addRubber(a, b, r) {
+  if (r.winner === 1) { a.matchW++; b.matchL++ } else { b.matchW++; a.matchL++ }
+  for (const [g1, g2] of setsOf(r.score)) addSet(a, b, g1, g2)
+}
+
+// Un super tie-break (10 points) compte comme un seul jeu, pour son vainqueur.
+function addSet(a, b, g1, g2) {
+  if (g1 > g2) { a.setW++; b.setL++ } else if (g2 > g1) { b.setW++; a.setL++ }
+  const superTb = g1 >= 10 || g2 >= 10
+  const games1 = superTb ? Number(g1 > g2) : g1
+  const games2 = superTb ? Number(g2 > g1) : g2
+  a.gameW += games1
+  a.gameL += games2
+  b.gameW += games2
+  b.gameL += games1
+}
+
 // Classement de poule : rencontres gagnees, puis matchs, puis % de sets et de
 // jeux (meme ordre de departage que le site officiel).
 function standingsOf(groupTies) {
@@ -432,18 +450,7 @@ function standingsOf(groupTies) {
     const a = row(t.team1)
     const b = row(t.team2)
     if (t.winner === 1) { a.tieW++; b.tieL++ } else if (t.winner === 2) { b.tieW++; a.tieL++ }
-    for (const r of t.rubbers) {
-      if (r.status !== 'COMPLETED') continue
-      if (r.winner === 1) { a.matchW++; b.matchL++ } else { b.matchW++; a.matchL++ }
-      for (const [g1, g2] of setsOf(r.score)) {
-        const superTb = g1 >= 10 || g2 >= 10
-        if (g1 > g2) { a.setW++; b.setL++ } else if (g2 > g1) { b.setW++; a.setL++ }
-        a.gameW += superTb ? (g1 > g2 ? 1 : 0) : g1
-        a.gameL += superTb ? (g2 > g1 ? 1 : 0) : g2
-        b.gameW += superTb ? (g2 > g1 ? 1 : 0) : g2
-        b.gameL += superTb ? (g1 > g2 ? 1 : 0) : g1
-      }
-    }
+    for (const r of t.rubbers.filter(r => r.status === 'COMPLETED')) addRubber(a, b, r)
   }
   const pct = (w, l) => (w + l ? w / (w + l) : 0)
   return [...rows.values()].sort((x, y) =>

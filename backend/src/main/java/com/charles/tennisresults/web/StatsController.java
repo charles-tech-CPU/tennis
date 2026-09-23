@@ -3,6 +3,7 @@ package com.charles.tennisresults.web;
 import com.charles.tennisresults.dto.StatsDto;
 import com.charles.tennisresults.service.StatsService;
 import java.time.Year;
+import java.time.ZoneId;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,7 +19,7 @@ public class StatsController {
 
     @GetMapping("/api/stats")
     public StatsDto stats(@RequestParam(required = false) Integer season) {
-        int s = season != null ? season : Year.now().getValue();
+        int s = season != null ? season : Year.now(ZoneId.of("Europe/Paris")).getValue();
         return statsService.computeStats(s);
     }
 }

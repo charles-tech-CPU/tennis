@@ -17,6 +17,7 @@ import com.charles.tennisresults.repository.EntryRepository;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -224,6 +225,27 @@ public class StatsService {
                 .toList();
     }
 
+    private static Map<Player, List<Match>> matchesByPlayer(List<Match> matches) {
+        Map<Player, List<Match>> byPlayer = new HashMap<>();
+        for (Match m : matches) {
+            for (Entry e : Arrays.asList(m.getEntry1(), m.getEntry2())) {
+                if (e != null && e.getPlayer() != null) {
+                    byPlayer.computeIfAbsent(e.getPlayer(), k -> new ArrayList<>())
+                            .add(m);
+                }
+            }
+        }
+        return byPlayer;
+    }
+
+    /** Vrai si l'entree e (cote du match) est celle de ce joueur et qu'elle a gagne. */
+    private static boolean wonBy(Match m, Entry e, Player player) {
+        return e != null
+                && e.getPlayer() == player
+                && m.getWinnerEntry() != null
+                && m.getWinnerEntry().getId().equals(e.getId());
+    }
+
     /**
      * Approximation : les matchs n'ont pas de date, seulement un numero de semaine
      * ATP par tournoi. On ordonne donc chronologiquement par semaine, puis qualifs
@@ -231,17 +253,7 @@ public class StatsService {
      * pour une serie de victoires "de saison", pas une horloge exacte.
      */
     private List<StreakDto> longestWinStreaks(List<Match> completedMatches) {
-        Map<Player, List<Match>> byPlayer = new HashMap<>();
-        for (Match m : completedMatches) {
-            Entry e1 = m.getEntry1();
-            Entry e2 = m.getEntry2();
-            if (e1 != null && e1.getPlayer() != null) {
-                byPlayer.computeIfAbsent(e1.getPlayer(), k -> new ArrayList<>()).add(m);
-            }
-            if (e2 != null && e2.getPlayer() != null) {
-                byPlayer.computeIfAbsent(e2.getPlayer(), k -> new ArrayList<>()).add(m);
-            }
-        }
+        Map<Player, List<Match>> byPlayer = matchesByPlayer(completedMatches);
         Comparator<Match> chronological = Comparator.<Match>comparingInt(m ->
                         Optional.ofNullable(m.getTournament().getWeekNumber()).orElse(Integer.MAX_VALUE))
                 .thenComparingInt(m -> m.getTournament().isQualifying() ? 0 : 1)
@@ -256,17 +268,7 @@ public class StatsService {
             int best = 0;
             int current = 0;
             for (Match m : matches) {
-                boolean won = m.getWinnerEntry() != null
-                        && ((m.getEntry1() != null
-                                        && m.getEntry1().getPlayer() == player
-                                        && m.getWinnerEntry()
-                                                .getId()
-                                                .equals(m.getEntry1().getId()))
-                                || (m.getEntry2() != null
-                                        && m.getEntry2().getPlayer() == player
-                                        && m.getWinnerEntry()
-                                                .getId()
-                                                .equals(m.getEntry2().getId())));
+                boolean won = wonBy(m, m.getEntry1(), player) || wonBy(m, m.getEntry2(), player);
                 current = won ? current + 1 : 0;
                 best = Math.max(best, current);
             }

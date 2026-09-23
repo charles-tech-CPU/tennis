@@ -3,6 +3,7 @@ package com.charles.tennisresults.service;
 import com.charles.tennisresults.domain.Entry;
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
+import com.charles.tennisresults.dto.EntryDto;
 import com.charles.tennisresults.dto.MatchDto;
 import com.charles.tennisresults.dto.ScoreUpdateDto;
 import com.charles.tennisresults.repository.MatchRepository;
@@ -91,27 +92,10 @@ public class MatchService {
                 m.getRoundOrder(),
                 roundLabel,
                 m.getPositionInRound(),
-                toEntryDto(m.getEntry1()),
-                toEntryDto(m.getEntry2()),
+                EntryDto.from(m.getEntry1()),
+                EntryDto.from(m.getEntry2()),
                 m.getScore(),
                 m.getWinnerEntry() != null ? m.getWinnerEntry().getId() : null,
                 m.getStatus());
-    }
-
-    private com.charles.tennisresults.dto.EntryDto toEntryDto(Entry e) {
-        if (e == null) {
-            return null;
-        }
-        return new com.charles.tennisresults.dto.EntryDto(
-                e.getId(),
-                e.getTournament().getId(),
-                e.getPlayer() != null ? e.getPlayer().getId() : null,
-                e.getPlayer() != null ? e.getPlayer().getLastName() : (e.isBye() ? "BYE" : null),
-                e.getPlayer() != null ? e.getPlayer().getFirstName() : null,
-                e.getPlayer() != null ? e.getPlayer().getNationality() : null,
-                e.getDrawPosition(),
-                e.getSeed(),
-                e.getEntryType(),
-                e.isBye());
     }
 }
