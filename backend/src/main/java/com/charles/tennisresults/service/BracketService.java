@@ -87,31 +87,32 @@ public class BracketService {
             // Les matchs du 1er tour sont normalement deja tous crees par
             // initializeSkeleton a la creation du tournoi ; ce fallback ne sert que
             // si le tableau a ete elargi depuis (securite, ne devrait pas arriver en v1).
-            Match match = round1Match(tournament, pos);
-
-            match.setEntry1(entryA);
-            match.setEntry2(entryB);
-
-            boolean byeA = entryA != null && entryA.isBye();
-            boolean byeB = entryB != null && entryB.isBye();
-
-            if (byeA != byeB && entryA != null && entryB != null) {
-                // exactement un des deux cotes est un bye (deux byes adjacents n'ont pas
-                // de sens et ne sont pas geres automatiquement - a corriger a la main).
-                Entry winner = byeA ? entryB : entryA;
-                match.setStatus(MatchStatus.BYE);
-                match.setWinnerEntry(winner);
-                matchRepository.save(match);
-                advanceWinner(match, winner);
-            } else if (entryA != null && entryB != null) {
-                if (match.getStatus() == MatchStatus.PENDING) {
-                    match.setStatus(MatchStatus.SCHEDULED);
-                }
-                matchRepository.save(match);
-            } else {
-                matchRepository.save(match);
-            }
+            fillRound1Match(round1Match(tournament, pos), entryA, entryB);
         }
+    }
+
+    /** Place les deux entrees dans le match, et fait passer directement un joueur oppose a un bye. */
+    private void fillRound1Match(Match match, Entry entryA, Entry entryB) {
+        match.setEntry1(entryA);
+        match.setEntry2(entryB);
+        if (entryA == null || entryB == null) {
+            matchRepository.save(match);
+            return;
+        }
+        if (entryA.isBye() != entryB.isBye()) {
+            // exactement un des deux cotes est un bye (deux byes adjacents n'ont pas
+            // de sens et ne sont pas geres automatiquement - a corriger a la main).
+            Entry winner = entryA.isBye() ? entryB : entryA;
+            match.setStatus(MatchStatus.BYE);
+            match.setWinnerEntry(winner);
+            matchRepository.save(match);
+            advanceWinner(match, winner);
+            return;
+        }
+        if (match.getStatus() == MatchStatus.PENDING) {
+            match.setStatus(MatchStatus.SCHEDULED);
+        }
+        matchRepository.save(match);
     }
 
     private Match round1Match(Tournament tournament, int position) {
