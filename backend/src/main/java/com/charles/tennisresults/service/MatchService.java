@@ -8,12 +8,11 @@ import com.charles.tennisresults.dto.ScoreUpdateDto;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class MatchService {
@@ -22,8 +21,10 @@ public class MatchService {
     private final TournamentRoundRepository tournamentRoundRepository;
     private final BracketService bracketService;
 
-    public MatchService(MatchRepository matchRepository, TournamentRoundRepository tournamentRoundRepository,
-                         BracketService bracketService) {
+    public MatchService(
+            MatchRepository matchRepository,
+            TournamentRoundRepository tournamentRoundRepository,
+            BracketService bracketService) {
         this.matchRepository = matchRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.bracketService = bracketService;
@@ -31,8 +32,9 @@ public class MatchService {
 
     @Transactional(readOnly = true)
     public List<MatchDto> findByTournament(Long tournamentId) {
-        Map<Integer, String> labels = tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(tournamentId)
-                .stream().collect(Collectors.toMap(r -> r.getRoundOrder(), r -> r.getRoundLabel()));
+        Map<Integer, String> labels =
+                tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(tournamentId).stream()
+                        .collect(Collectors.toMap(r -> r.getRoundOrder(), r -> r.getRoundLabel()));
         return matchRepository.findByTournamentIdOrderByRoundOrderAscPositionInRoundAsc(tournamentId).stream()
                 .map(m -> toDto(m, labels.get(m.getRoundOrder())))
                 .toList();
@@ -40,7 +42,8 @@ public class MatchService {
 
     @Transactional
     public MatchDto recordScore(Long matchId, ScoreUpdateDto dto) {
-        Match match = matchRepository.findById(matchId)
+        Match match = matchRepository
+                .findById(matchId)
                 .orElseThrow(() -> new EntityNotFoundException("Match introuvable: " + matchId));
 
         if (match.getEntry1() == null || match.getEntry2() == null) {
@@ -69,12 +72,15 @@ public class MatchService {
 
         bracketService.advanceWinner(match, newWinner);
 
-        String label = tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(match.getTournament().getId())
-                .stream()
-                .filter(r -> r.getRoundOrder().equals(match.getRoundOrder()))
-                .map(r -> r.getRoundLabel())
-                .findFirst()
-                .orElse(null);
+        String label =
+                tournamentRoundRepository
+                        .findByTournamentIdOrderByRoundOrderAsc(
+                                match.getTournament().getId())
+                        .stream()
+                        .filter(r -> r.getRoundOrder().equals(match.getRoundOrder()))
+                        .map(r -> r.getRoundLabel())
+                        .findFirst()
+                        .orElse(null);
         return toDto(match, label);
     }
 
@@ -89,8 +95,7 @@ public class MatchService {
                 toEntryDto(m.getEntry2()),
                 m.getScore(),
                 m.getWinnerEntry() != null ? m.getWinnerEntry().getId() : null,
-                m.getStatus()
-        );
+                m.getStatus());
     }
 
     private com.charles.tennisresults.dto.EntryDto toEntryDto(Entry e) {
@@ -107,7 +112,6 @@ public class MatchService {
                 e.getDrawPosition(),
                 e.getSeed(),
                 e.getEntryType(),
-                e.isBye()
-        );
+                e.isBye());
     }
 }

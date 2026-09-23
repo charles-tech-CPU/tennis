@@ -5,10 +5,9 @@ import com.charles.tennisresults.dto.PlayerCreateDto;
 import com.charles.tennisresults.dto.PlayerDto;
 import com.charles.tennisresults.repository.PlayerRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.stereotype.Service;
-
 import java.util.Comparator;
 import java.util.List;
+import org.springframework.stereotype.Service;
 
 @Service
 public class PlayerService {
@@ -32,7 +31,8 @@ public class PlayerService {
     }
 
     public PlayerDto update(Long id, PlayerCreateDto dto) {
-        Player p = playerRepository.findById(id)
+        Player p = playerRepository
+                .findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Joueur introuvable: " + id));
         p.setLastName(dto.lastName());
         p.setFirstName(dto.firstName());
@@ -41,6 +41,7 @@ public class PlayerService {
     }
 
     private PlayerDto toDto(Player p) {
-        return new PlayerDto(p.getId(), p.getLastName(), p.getFirstName(), p.getNationality(), p.getLegacySnapshotPoints());
+        return new PlayerDto(
+                p.getId(), p.getLastName(), p.getFirstName(), p.getNationality(), p.getLegacySnapshotPoints());
     }
 }

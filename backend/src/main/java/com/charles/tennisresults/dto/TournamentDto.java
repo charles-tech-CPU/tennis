@@ -2,7 +2,6 @@ package com.charles.tennisresults.dto;
 
 import com.charles.tennisresults.domain.MandatorySlot;
 import com.charles.tennisresults.domain.TournamentCategory;
-
 import java.util.List;
 
 public record TournamentDto(
@@ -24,6 +23,4 @@ public record TournamentDto(
         Long qualifyingTournamentId,
         TournamentStatus status,
         Integer colorHue,
-        TournamentWinnerDto winner
-) {
-}
+        TournamentWinnerDto winner) {}

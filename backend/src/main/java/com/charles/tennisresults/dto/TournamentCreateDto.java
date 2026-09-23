@@ -4,7 +4,6 @@ import com.charles.tennisresults.domain.MandatorySlot;
 import com.charles.tennisresults.domain.TournamentCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.List;
 
 /**
@@ -24,6 +23,4 @@ public record TournamentCreateDto(
         Integer qualifyingRound1Points,
         Integer qualifyingRound2Points,
         Integer runnerUpPoints,
-        List<RoundPointsDto> rounds
-) {
-}
+        List<RoundPointsDto> rounds) {}

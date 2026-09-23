@@ -2,7 +2,6 @@ package com.charles.tennisresults.dto;
 
 import com.charles.tennisresults.domain.MandatorySlot;
 import com.charles.tennisresults.domain.TournamentCategory;
-
 import java.util.List;
 
 /**
@@ -27,6 +26,4 @@ public record TournamentUpdateDto(
         Integer qualifyingRound2Points,
         Integer runnerUpPoints,
         List<RoundPointsDto> rounds,
-        Integer drawSize
-) {
-}
+        Integer drawSize) {}

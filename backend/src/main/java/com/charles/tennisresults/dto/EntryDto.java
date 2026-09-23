@@ -12,6 +12,4 @@ public record EntryDto(
         Integer drawPosition,
         Integer seed,
         EntryType entryType,
-        boolean bye
-) {
-}
+        boolean bye) {}

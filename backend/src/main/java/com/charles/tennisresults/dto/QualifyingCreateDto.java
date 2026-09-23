@@ -2,7 +2,6 @@ package com.charles.tennisresults.dto;
 
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-
 import java.util.List;
 
 /**
@@ -12,7 +11,4 @@ import java.util.List;
  * bareme de points par tour de qualification (Q1, Q2, ...) - typiquement 2 tours.
  */
 public record QualifyingCreateDto(
-        @NotNull Integer drawSize,
-        @NotEmpty List<RoundPointsDto> rounds
-) {
-}
+        @NotNull Integer drawSize, @NotEmpty List<RoundPointsDto> rounds) {}

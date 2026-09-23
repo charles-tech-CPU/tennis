@@ -2,10 +2,9 @@ package com.charles.tennisresults.web;
 
 import com.charles.tennisresults.dto.RankingRowDto;
 import com.charles.tennisresults.service.RankingService;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
 
 @RestController
 public class RankingController {

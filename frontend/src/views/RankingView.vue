@@ -36,10 +36,10 @@
     </span>
   </p>
 
-  <div v-if="filteredRows.length" class="scroll-top" ref="scrollTopEl" @scroll="onTopScroll">
+  <div v-if="filteredRows.length" ref="scrollTopEl" class="scroll-top" @scroll="onTopScroll">
     <div :style="{ width: contentWidth + 'px', height: '1px' }"></div>
   </div>
-  <div v-if="filteredRows.length" class="table-card ranking-scroll" ref="scrollBottomEl" @scroll="onBottomScroll">
+  <div v-if="filteredRows.length" ref="scrollBottomEl" class="table-card ranking-scroll" @scroll="onBottomScroll">
     <table class="ranking-table">
       <thead>
         <tr>

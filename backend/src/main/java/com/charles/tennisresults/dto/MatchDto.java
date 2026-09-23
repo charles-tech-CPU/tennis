@@ -12,6 +12,4 @@ public record MatchDto(
         EntryDto entry2,
         String score,
         Long winnerEntryId,
-        MatchStatus status
-) {
-}
+        MatchStatus status) {}

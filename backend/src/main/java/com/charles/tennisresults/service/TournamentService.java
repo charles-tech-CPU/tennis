@@ -17,13 +17,12 @@ import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TournamentService {
@@ -34,11 +33,12 @@ public class TournamentService {
     private final EntryRepository entryRepository;
     private final BracketService bracketService;
 
-    public TournamentService(TournamentRepository tournamentRepository,
-                              TournamentRoundRepository tournamentRoundRepository,
-                              MatchRepository matchRepository,
-                              EntryRepository entryRepository,
-                              BracketService bracketService) {
+    public TournamentService(
+            TournamentRepository tournamentRepository,
+            TournamentRoundRepository tournamentRoundRepository,
+            MatchRepository matchRepository,
+            EntryRepository entryRepository,
+            BracketService bracketService) {
         this.tournamentRepository = tournamentRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.matchRepository = matchRepository;
@@ -65,7 +65,8 @@ public class TournamentService {
         return tournaments.stream()
                 .map(t -> toDto(t, progress.statusOf(t), hues.get(t.getId())))
                 .sorted(Comparator.comparing((TournamentDto t) -> t.status() == TournamentStatus.IN_PROGRESS ? 0 : 1)
-                        .thenComparing(Comparator.comparing(TournamentDto::season).reversed())
+                        .thenComparing(
+                                Comparator.comparing(TournamentDto::season).reversed())
                         .thenComparing(t -> t.weekNumber() == null ? 0 : t.weekNumber())
                         .thenComparing(t -> t.category().ordinal())
                         .thenComparing(TournamentDto::name))
@@ -141,7 +142,8 @@ public class TournamentService {
         // et cassent la detection de conflit de semaine (Charles, 2026-09-20 -
         // exactement le bug qui a touche Madrid).
         if (!t.isQualifying()) {
-            tournamentRepository.findByMainTournamentId(t.getId())
+            tournamentRepository
+                    .findByMainTournamentId(t.getId())
                     .ifPresent(q -> q.setWeekNumber(computeQualifyingWeekNumber(t)));
         }
 
@@ -190,7 +192,8 @@ public class TournamentService {
     public TournamentDto createQualifying(Long mainTournamentId, QualifyingCreateDto dto) {
         Tournament main = getOrThrow(mainTournamentId);
         if (main.isQualifying()) {
-            throw new IllegalArgumentException("Un tableau de qualifications ne peut pas avoir ses propres qualifications.");
+            throw new IllegalArgumentException(
+                    "Un tableau de qualifications ne peut pas avoir ses propres qualifications.");
         }
         if (tournamentRepository.findByMainTournamentId(mainTournamentId).isPresent()) {
             throw new IllegalArgumentException("Ce tournoi a deja un tableau de qualifications.");
@@ -236,9 +239,7 @@ public class TournamentService {
     private Integer computeQualifyingWeekNumber(Tournament main) {
         boolean qualifsWeekBefore = main.getCategory() == TournamentCategory.GRAND_SLAM
                 || main.getCategory() == TournamentCategory.MASTERS_1000;
-        return qualifsWeekBefore && main.getWeekNumber() != null
-                ? main.getWeekNumber() - 1
-                : main.getWeekNumber();
+        return qualifsWeekBefore && main.getWeekNumber() != null ? main.getWeekNumber() - 1 : main.getWeekNumber();
     }
 
     @Transactional
@@ -259,7 +260,8 @@ public class TournamentService {
     }
 
     private Tournament getOrThrow(Long id) {
-        return tournamentRepository.findById(id)
+        return tournamentRepository
+                .findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Tournoi introuvable: " + id));
     }
 
@@ -279,19 +281,36 @@ public class TournamentService {
 
     private TournamentDto toDto(Tournament t, TournamentStatus status, Integer colorHue) {
         int drawSlots = t.isQualifying() ? t.getDrawSize() : RoundLabels.nextPowerOfTwo(t.getDrawSize());
-        List<RoundPointsDto> rounds = tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(t.getId())
-                .stream()
-                .map(r -> new RoundPointsDto(r.getRoundOrder(), r.getRoundLabel(), r.getPoints()))
-                .toList();
-        Long qualifyingTournamentId = t.isQualifying() ? null
-                : tournamentRepository.findByMainTournamentId(t.getId()).map(Tournament::getId).orElse(null);
+        List<RoundPointsDto> rounds =
+                tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(t.getId()).stream()
+                        .map(r -> new RoundPointsDto(r.getRoundOrder(), r.getRoundLabel(), r.getPoints()))
+                        .toList();
+        Long qualifyingTournamentId = t.isQualifying()
+                ? null
+                : tournamentRepository
+                        .findByMainTournamentId(t.getId())
+                        .map(Tournament::getId)
+                        .orElse(null);
         return new TournamentDto(
-                t.getId(), t.getName(), t.getCategory(), t.getSeason(), t.getWeekNumber(), t.getCountry(),
-                t.getMandatorySlot(), t.getDrawSize(), drawSlots,
-                t.getQualifyingRound1Points(), t.getQualifyingRound2Points(), t.getRunnerUpPoints(), rounds,
-                t.isQualifying(), t.getMainTournamentId(), qualifyingTournamentId, status, colorHue,
-                winnerOf(t, status)
-        );
+                t.getId(),
+                t.getName(),
+                t.getCategory(),
+                t.getSeason(),
+                t.getWeekNumber(),
+                t.getCountry(),
+                t.getMandatorySlot(),
+                t.getDrawSize(),
+                drawSlots,
+                t.getQualifyingRound1Points(),
+                t.getQualifyingRound2Points(),
+                t.getRunnerUpPoints(),
+                rounds,
+                t.isQualifying(),
+                t.getMainTournamentId(),
+                qualifyingTournamentId,
+                status,
+                colorHue,
+                winnerOf(t, status));
     }
 
     /** Vainqueur de la finale du tableau principal, uniquement si le tournoi est termine. */
@@ -300,12 +319,17 @@ public class TournamentService {
             return null;
         }
         int totalRounds = RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(t.getDrawSize()));
-        return matchRepository.findByTournamentIdAndRoundOrderAndPositionInRound(t.getId(), totalRounds, 1)
-                .filter(m -> m.getStatus() == MatchStatus.COMPLETED && m.getWinnerEntry() != null
+        return matchRepository
+                .findByTournamentIdAndRoundOrderAndPositionInRound(t.getId(), totalRounds, 1)
+                .filter(m -> m.getStatus() == MatchStatus.COMPLETED
+                        && m.getWinnerEntry() != null
                         && m.getWinnerEntry().getPlayer() != null)
                 .map(Match::getWinnerEntry)
-                .map(e -> new TournamentWinnerDto(e.getPlayer().getId(), e.getPlayer().getLastName(),
-                        e.getPlayer().getFirstName(), e.getPlayer().getNationality()))
+                .map(e -> new TournamentWinnerDto(
+                        e.getPlayer().getId(),
+                        e.getPlayer().getLastName(),
+                        e.getPlayer().getFirstName(),
+                        e.getPlayer().getNationality()))
                 .orElse(null);
     }
 }

@@ -98,7 +98,7 @@
       <h3>Ajouter au tableau ({{ drawEntries.length }} / {{ drawTournament?.drawSlots ?? '?' }})</h3>
       <form class="inline" style="margin-top:10px" @submit.prevent="submitEntry">
         <input v-model.number="entryForm.drawPosition" type="number" min="1" :max="drawTournament?.drawSlots" placeholder="Position" required />
-        <label><input type="checkbox" v-model="entryForm.bye" /> Bye</label>
+        <label><input v-model="entryForm.bye" type="checkbox" /> Bye</label>
 
         <template v-if="!entryForm.bye">
           <template v-if="!entryForm.newPlayer">
@@ -143,11 +143,11 @@
       <h3>Score du match</h3>
       <p class="matchup">{{ scoreEditorMatch.entry1.playerLastName }} vs {{ scoreEditorMatch.entry2.playerLastName }}</p>
       <label>
-        <input type="radio" :value="scoreEditorMatch.entry1.id" v-model="scoreForm.winnerEntryId" />
+        <input v-model="scoreForm.winnerEntryId" type="radio" :value="scoreEditorMatch.entry1.id" />
         {{ scoreEditorMatch.entry1.playerLastName }} gagne
       </label>
       <label>
-        <input type="radio" :value="scoreEditorMatch.entry2.id" v-model="scoreForm.winnerEntryId" />
+        <input v-model="scoreForm.winnerEntryId" type="radio" :value="scoreEditorMatch.entry2.id" />
         {{ scoreEditorMatch.entry2.playerLastName }} gagne
       </label>
       <input v-model="scoreForm.score" placeholder="Score set par set, ex: 63 46 63" />

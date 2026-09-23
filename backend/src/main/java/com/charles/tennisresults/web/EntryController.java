@@ -4,9 +4,8 @@ import com.charles.tennisresults.dto.EntryCreateDto;
 import com.charles.tennisresults.dto.EntryDto;
 import com.charles.tennisresults.service.EntryService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tournaments/{tournamentId}/entries")

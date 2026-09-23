@@ -6,9 +6,8 @@ import com.charles.tennisresults.dto.TournamentDto;
 import com.charles.tennisresults.dto.TournamentUpdateDto;
 import com.charles.tennisresults.service.TournamentService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/tournaments")

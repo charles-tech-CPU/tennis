@@ -2,8 +2,7 @@ package com.charles.tennisresults.service;
 
 public final class RoundLabels {
 
-    private RoundLabels() {
-    }
+    private RoundLabels() {}
 
     /** Plus petite puissance de 2 superieure ou egale a n. */
     public static int nextPowerOfTwo(int n) {

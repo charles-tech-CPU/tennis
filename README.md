@@ -1,5 +1,7 @@
 # Tennis Results
 
+[![Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=charles-tech-CPU_tennis&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=charles-tech-CPU_tennis) [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=charles-tech-CPU_tennis&metric=bugs)](https://sonarcloud.io/summary/new_code?id=charles-tech-CPU_tennis) [![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=charles-tech-CPU_tennis&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=charles-tech-CPU_tennis) [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=charles-tech-CPU_tennis&metric=coverage)](https://sonarcloud.io/summary/new_code?id=charles-tech-CPU_tennis) [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=charles-tech-CPU_tennis&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=charles-tech-CPU_tennis)
+
 Application de saisie et de suivi du circuit ATP (hommes uniquement, du Grand Chelem
 jusqu'au Challenger ATP50) : tournois avec un vrai tableau visuel a elimination
 directe (bracket), et classement calcule automatiquement. Backend Java / Spring Boot,

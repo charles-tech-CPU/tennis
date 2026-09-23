@@ -1,7 +1,6 @@
 package com.charles.tennisresults.service;
 
 import com.charles.tennisresults.domain.TournamentCategory;
-
 import java.util.List;
 import java.util.Map;
 
@@ -15,8 +14,7 @@ import java.util.Map;
  */
 public final class CategoryDefaults {
 
-    private CategoryDefaults() {
-    }
+    private CategoryDefaults() {}
 
     private static final Map<String, List<Integer>> DEFAULTS = Map.ofEntries(
             Map.entry(key(TournamentCategory.GRAND_SLAM, 128), List.of(10, 45, 90, 180, 360, 720, 2000)),
@@ -30,8 +28,7 @@ public final class CategoryDefaults {
             Map.entry(key(TournamentCategory.ATP_125, 32), List.of(13, 25, 50, 80, 125)),
             Map.entry(key(TournamentCategory.ATP_100, 32), List.of(10, 20, 40, 65, 100)),
             Map.entry(key(TournamentCategory.ATP_75, 32), List.of(8, 15, 30, 48, 75)),
-            Map.entry(key(TournamentCategory.ATP_50, 32), List.of(5, 10, 20, 32, 50))
-    );
+            Map.entry(key(TournamentCategory.ATP_50, 32), List.of(5, 10, 20, 32, 50)));
 
     private static String key(TournamentCategory category, int drawSlots) {
         return category.name() + "-" + drawSlots;
@@ -44,17 +41,18 @@ public final class CategoryDefaults {
             return exact;
         }
         int rounds = Integer.numberOfTrailingZeros(drawSlots);
-        int base = switch (category) {
-            case GRAND_SLAM -> 2000;
-            case MASTERS_1000 -> 1000;
-            case ATP_500 -> 500;
-            case ATP_250 -> 250;
-            case ATP_175 -> 175;
-            case ATP_125 -> 125;
-            case ATP_100 -> 100;
-            case ATP_75 -> 75;
-            case ATP_50 -> 50;
-        };
+        int base =
+                switch (category) {
+                    case GRAND_SLAM -> 2000;
+                    case MASTERS_1000 -> 1000;
+                    case ATP_500 -> 500;
+                    case ATP_250 -> 250;
+                    case ATP_175 -> 175;
+                    case ATP_125 -> 125;
+                    case ATP_100 -> 100;
+                    case ATP_75 -> 75;
+                    case ATP_50 -> 50;
+                };
         Integer[] points = new Integer[rounds];
         for (int i = rounds; i >= 1; i--) {
             points[i - 1] = Math.max(1, base >> (rounds - i));

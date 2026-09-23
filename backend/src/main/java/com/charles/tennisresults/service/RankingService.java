@@ -9,11 +9,10 @@ import com.charles.tennisresults.repository.EntryRepository;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.*;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Calcule automatiquement le classement glissant de chaque joueur, en
@@ -50,25 +49,26 @@ import java.util.stream.Collectors;
 @Service
 public class RankingService {
 
-    private static final Set<MandatorySlot> MANDATORY_EXCLUDING_MC = EnumSet.complementOf(
-            EnumSet.of(MandatorySlot.MONTE_CARLO));
+    private static final Set<MandatorySlot> MANDATORY_EXCLUDING_MC =
+            EnumSet.complementOf(EnumSet.of(MandatorySlot.MONTE_CARLO));
 
     private final EntryRepository entryRepository;
     private final MatchRepository matchRepository;
     private final TournamentRoundRepository tournamentRoundRepository;
     private final TournamentRepository tournamentRepository;
 
-    public RankingService(EntryRepository entryRepository, MatchRepository matchRepository,
-                           TournamentRoundRepository tournamentRoundRepository,
-                           TournamentRepository tournamentRepository) {
+    public RankingService(
+            EntryRepository entryRepository,
+            MatchRepository matchRepository,
+            TournamentRoundRepository tournamentRoundRepository,
+            TournamentRepository tournamentRepository) {
         this.entryRepository = entryRepository;
         this.matchRepository = matchRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.tournamentRepository = tournamentRepository;
     }
 
-    private record EntryOutcome(int points, boolean stillAlive) {
-    }
+    private record EntryOutcome(int points, boolean stillAlive) {}
 
     /**
      * Parmi toutes les editions (saisons) d'un meme tournoi RECURRENT, ne
@@ -116,10 +116,11 @@ public class RankingService {
 
     @Transactional(readOnly = true)
     public List<RankingRowDto> computeRanking() {
-        Map<Long, Tournament> tournamentsById = tournamentRepository.findAll().stream()
-                .collect(Collectors.toMap(Tournament::getId, t -> t));
+        Map<Long, Tournament> tournamentsById =
+                tournamentRepository.findAll().stream().collect(Collectors.toMap(Tournament::getId, t -> t));
 
-        List<Tournament> allMains = tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
+        List<Tournament> allMains =
+                tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, allMains);
         Map<Long, Integer> hueByTournamentId = progress.hueByTournamentId(allMains);
 
@@ -128,15 +129,13 @@ public class RankingService {
         List<Entry> entries = entryRepository.findByPlayerIsNotNull().stream()
                 .filter(entry -> {
                     Tournament t = entry.getTournament();
-                    Tournament effective = t.isQualifying()
-                            ? tournamentsById.getOrDefault(t.getMainTournamentId(), t)
-                            : t;
+                    Tournament effective =
+                            t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
                     return activeTournamentIds.contains(effective.getId());
                 })
                 .toList();
 
-        Map<Player, List<Entry>> byPlayer = entries.stream()
-                .collect(Collectors.groupingBy(Entry::getPlayer));
+        Map<Player, List<Entry>> byPlayer = entries.stream().collect(Collectors.groupingBy(Entry::getPlayer));
 
         List<RankingRowDto> rows = new ArrayList<>();
         for (Map.Entry<Player, List<Entry>> e : byPlayer.entrySet()) {
@@ -151,9 +150,7 @@ public class RankingService {
             for (Entry entry : e.getValue()) {
                 EntryOutcome outcome = pointsEarned(entry);
                 Tournament t = entry.getTournament();
-                Tournament effective = t.isQualifying()
-                        ? tournamentsById.getOrDefault(t.getMainTournamentId(), t)
-                        : t;
+                Tournament effective = t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
 
                 if (outcome.points() > 0) {
                     pointsByTournamentId.merge(effective.getId(), outcome.points(), Integer::sum);
@@ -162,8 +159,8 @@ public class RankingService {
                 if (outcome.stillAlive() && progress.statusOf(effective) == TournamentStatus.IN_PROGRESS) {
                     Integer hue = hueByTournamentId.get(effective.getId());
                     if (hue != null) {
-                        liveByTournamentId.putIfAbsent(effective.getId(),
-                                new LiveTournamentDto(effective.getId(), effective.getName(), hue));
+                        liveByTournamentId.putIfAbsent(
+                                effective.getId(), new LiveTournamentDto(effective.getId(), effective.getName(), hue));
                     }
                 }
             }
@@ -174,7 +171,8 @@ public class RankingService {
 
             for (Map.Entry<Long, Integer> pe : pointsByTournamentId.entrySet()) {
                 Tournament tournament = tournamentByKey.get(pe.getKey());
-                TournamentPointsDto dto = new TournamentPointsDto(tournament.getId(), tournament.getName(), pe.getValue());
+                TournamentPointsDto dto =
+                        new TournamentPointsDto(tournament.getId(), tournament.getName(), pe.getValue());
                 MandatorySlot slot = tournament.getMandatorySlot();
                 if (slot == MandatorySlot.MONTE_CARLO) {
                     monteCarlo = dto;
@@ -186,9 +184,12 @@ public class RankingService {
             }
 
             othersAll.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
-            int mandatoryTotal = mandatorySlots.values().stream().mapToInt(TournamentPointsDto::points).sum();
+            int mandatoryTotal = mandatorySlots.values().stream()
+                    .mapToInt(TournamentPointsDto::points)
+                    .sum();
             List<TournamentPointsDto> bestOthers = othersAll.stream().limit(5).toList();
-            int best5 = bestOthers.stream().mapToInt(TournamentPointsDto::points).sum();
+            int best5 =
+                    bestOthers.stream().mapToInt(TournamentPointsDto::points).sum();
             TournamentPointsDto sixth = othersAll.size() > 5 ? othersAll.get(5) : null;
 
             int monteCarloPts = monteCarlo != null ? monteCarlo.points() : 0;
@@ -213,12 +214,26 @@ public class RankingService {
             nonCounted.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
 
             substituteMissingMandatorySlots(mandatorySlots, nonCounted);
-            mandatoryTotal = mandatorySlots.values().stream().mapToInt(TournamentPointsDto::points).sum();
+            mandatoryTotal = mandatorySlots.values().stream()
+                    .mapToInt(TournamentPointsDto::points)
+                    .sum();
             total = mandatoryTotal + best5 + replacementValue;
 
-            rows.add(new RankingRowDto(player.getId(), player.getLastName(), player.getFirstName(),
-                    player.getNationality(), mandatorySlots, monteCarlo, bestOthers, replacement, nonCounted,
-                    mandatoryTotal, best5, replacementValue, total, new ArrayList<>(liveByTournamentId.values())));
+            rows.add(new RankingRowDto(
+                    player.getId(),
+                    player.getLastName(),
+                    player.getFirstName(),
+                    player.getNationality(),
+                    mandatorySlots,
+                    monteCarlo,
+                    bestOthers,
+                    replacement,
+                    nonCounted,
+                    mandatoryTotal,
+                    best5,
+                    replacementValue,
+                    total,
+                    new ArrayList<>(liveByTournamentId.values())));
         }
 
         rows.sort(Comparator.comparingInt(RankingRowDto::total).reversed());
@@ -238,8 +253,8 @@ public class RankingService {
      * propre mecanisme de remplacement), et ainsi de suite. Consomme les
      * candidats utilises dans `nonCounted` (deja trie par points decroissants).
      */
-    private void substituteMissingMandatorySlots(Map<MandatorySlot, TournamentPointsDto> mandatorySlots,
-                                                   List<TournamentPointsDto> nonCounted) {
+    private void substituteMissingMandatorySlots(
+            Map<MandatorySlot, TournamentPointsDto> mandatorySlots, List<TournamentPointsDto> nonCounted) {
         Iterator<TournamentPointsDto> candidates = nonCounted.iterator();
         for (MandatorySlot slot : MandatorySlot.values()) {
             if (slot == MandatorySlot.MONTE_CARLO || mandatorySlots.containsKey(slot)) {
@@ -250,8 +265,10 @@ public class RankingService {
             }
             TournamentPointsDto candidate = candidates.next();
             candidates.remove();
-            mandatorySlots.put(slot, new TournamentPointsDto(
-                    candidate.tournamentId(), candidate.tournamentName(), candidate.points(), true));
+            mandatorySlots.put(
+                    slot,
+                    new TournamentPointsDto(
+                            candidate.tournamentId(), candidate.tournamentName(), candidate.points(), true));
         }
     }
 
@@ -265,10 +282,9 @@ public class RankingService {
      */
     private EntryOutcome pointsEarned(Entry entry) {
         Tournament tournament = entry.getTournament();
-        Map<Integer, Integer> pointsByRound = tournamentRoundRepository
-                .findByTournamentIdOrderByRoundOrderAsc(tournament.getId())
-                .stream()
-                .collect(Collectors.toMap(TournamentRound::getRoundOrder, TournamentRound::getPoints));
+        Map<Integer, Integer> pointsByRound =
+                tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(tournament.getId()).stream()
+                        .collect(Collectors.toMap(TournamentRound::getRoundOrder, TournamentRound::getPoints));
 
         // Un tableau de qualifications n'a pas de "finale" unique : plusieurs
         // groupes independants produisent chacun un qualifie au dernier tour
@@ -276,7 +292,8 @@ public class RankingService {
         // totalRounds se deduit de la taille du tableau (une seule finale).
         int totalRounds = tournament.isQualifying()
                 ? pointsByRound.size()
-                : (tournament.getDrawSize() == null ? 0
+                : (tournament.getDrawSize() == null
+                        ? 0
                         : RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(tournament.getDrawSize())));
         if (totalRounds == 0) {
             return new EntryOutcome(0, false);
@@ -293,13 +310,15 @@ public class RankingService {
             return new EntryOutcome(0, true); // pas encore de resultat, mais pas elimine
         }
 
-        boolean won = deepest.getWinnerEntry() != null && deepest.getWinnerEntry().getId().equals(entry.getId());
+        boolean won = deepest.getWinnerEntry() != null
+                && deepest.getWinnerEntry().getId().equals(entry.getId());
         int r = deepest.getRoundOrder();
 
         if (won) {
             if (r == totalRounds) {
                 if (isGrandSlamQualifying(tournament)) {
-                    return new EntryOutcome(GS_QUALIFYING_QUALIFIED_POINTS, false); // qualifie pour le tableau principal
+                    return new EntryOutcome(
+                            GS_QUALIFYING_QUALIFIED_POINTS, false); // qualifie pour le tableau principal
                 }
                 return new EntryOutcome(pointsByRound.getOrDefault(totalRounds, 0), false); // champion (ou qualifie)
             }
@@ -309,7 +328,8 @@ public class RankingService {
             // ne declenche aucune garantie tant qu'aucun vrai match n'a ete gagne.
             Match deepestRealWin = matches.stream()
                     .filter(m -> m.getStatus() == MatchStatus.COMPLETED)
-                    .filter(m -> m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(entry.getId()))
+                    .filter(m -> m.getWinnerEntry() != null
+                            && m.getWinnerEntry().getId().equals(entry.getId()))
                     .max(Comparator.comparingInt(Match::getRoundOrder))
                     .orElse(null);
             int guaranteed = deepestRealWin != null
@@ -333,7 +353,8 @@ public class RankingService {
     }
 
     /** Points pour une elimination (actee ou hypothetique) au tour `round`. */
-    private int eliminationValue(Tournament tournament, Map<Integer, Integer> pointsByRound, int round, int totalRounds) {
+    private int eliminationValue(
+            Tournament tournament, Map<Integer, Integer> pointsByRound, int round, int totalRounds) {
         // Un elimine au 1er tour des qualifs (Q1) touche toujours 0, quel que
         // soit le bareme configure pour ce tour - meme regle que le 1er tour
         // du tableau principal (R32 = 0), mais imposee ici plutot que laissee

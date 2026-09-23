@@ -6,8 +6,8 @@
        de securite pour les cas extremes (tres grand tableau, tres petit
        ecran) ou meme la largeur minimale ne suffirait pas. Voir
        recomputeLayout() plus bas. -->
-  <div class="bracket-viewport" ref="viewportEl" :style="viewportStyle">
-    <div class="bracket-scaled" ref="scaledEl" :style="scaledStyle">
+  <div ref="viewportEl" class="bracket-viewport" :style="viewportStyle">
+    <div ref="scaledEl" class="bracket-scaled" :style="scaledStyle">
       <!-- Tableau a elimination directe "classique" (1 seul vainqueur en
            finale) : deux moities miroir qui convergent vers la finale au
            centre, avec les lignes de progression du tableau papier. -->
@@ -81,7 +81,7 @@ const rightTree = computed(() => isSingleElim.value ? buildBracketNode(matchesBy
 const qualifyingGroups = computed(() => {
   if (isSingleElim.value || totalRounds.value < 1) return []
   return lastRoundMatches.value
-    .sort((a, b) => a.positionInRound - b.positionInRound)
+    .toSorted((a, b) => a.positionInRound - b.positionInRound)
     .map(m => {
       const tree = buildBracketNode(matchesByKey.value, totalRounds.value, m.positionInRound)
       if (tree.match) tree.match = { ...tree.match, isQualifierRoot: true }

@@ -1,0 +1,1 @@
+UPDATE tournament SET name = 'BUCARAMANGA' WHERE id = 326 AND name = 'BUCARAMANAGE';

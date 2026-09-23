@@ -1,7 +1,6 @@
 package com.charles.tennisresults.dto;
 
 import com.charles.tennisresults.domain.MandatorySlot;
-
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +25,4 @@ public record RankingRowDto(
         int othersTotal,
         int replacementValue,
         int total,
-        List<LiveTournamentDto> liveTournaments
-) {
-}
+        List<LiveTournamentDto> liveTournaments) {}

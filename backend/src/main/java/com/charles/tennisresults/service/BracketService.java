@@ -5,11 +5,10 @@ import com.charles.tennisresults.repository.EntryRepository;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.util.List;
 import java.util.Optional;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Genere le squelette du tableau (tous les matchs, tour par tour) et gere
@@ -23,8 +22,10 @@ public class BracketService {
     private final EntryRepository entryRepository;
     private final TournamentRepository tournamentRepository;
 
-    public BracketService(MatchRepository matchRepository, EntryRepository entryRepository,
-                           TournamentRepository tournamentRepository) {
+    public BracketService(
+            MatchRepository matchRepository,
+            EntryRepository entryRepository,
+            TournamentRepository tournamentRepository) {
         this.matchRepository = matchRepository;
         this.entryRepository = entryRepository;
         this.tournamentRepository = tournamentRepository;
@@ -64,7 +65,8 @@ public class BracketService {
      */
     @Transactional
     public void syncRound1FromEntries(Long tournamentId) {
-        Tournament tournament = tournamentRepository.findById(tournamentId)
+        Tournament tournament = tournamentRepository
+                .findById(tournamentId)
                 .orElseThrow(() -> new EntityNotFoundException("Tournoi introuvable: " + tournamentId));
         List<Entry> entries = entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId);
         // Un tableau de qualifications garde sa taille reelle (groupes de 4, pas de
@@ -72,7 +74,9 @@ public class BracketService {
         // tableau principal arrondit au plus proche 2^n avec des byes.
         int drawSlots = tournament.isQualifying()
                 ? tournament.getDrawSize()
-                : RoundLabels.nextPowerOfTwo(Math.max(2, entries.stream().mapToInt(Entry::getDrawPosition).max().orElse(0)));
+                : RoundLabels.nextPowerOfTwo(Math.max(
+                        2,
+                        entries.stream().mapToInt(Entry::getDrawPosition).max().orElse(0)));
 
         for (int pos = 1; pos * 2 <= drawSlots; pos++) {
             int posA = pos * 2 - 1;
@@ -121,7 +125,10 @@ public class BracketService {
     }
 
     private Entry findAtPosition(List<Entry> entries, int position) {
-        return entries.stream().filter(e -> e.getDrawPosition() == position).findFirst().orElse(null);
+        return entries.stream()
+                .filter(e -> e.getDrawPosition() == position)
+                .findFirst()
+                .orElse(null);
     }
 
     /** Place le vainqueur dans le match du tour suivant, et sauvegarde ce match. */
@@ -156,9 +163,7 @@ public class BracketService {
     @Transactional
     public void resetDownstream(Match match) {
         Optional<Match> parentOpt = matchRepository.findByTournamentIdAndRoundOrderAndPositionInRound(
-                match.getTournament().getId(),
-                match.getRoundOrder() + 1,
-                (match.getPositionInRound() + 1) / 2);
+                match.getTournament().getId(), match.getRoundOrder() + 1, (match.getPositionInRound() + 1) / 2);
         if (parentOpt.isEmpty()) {
             return;
         }

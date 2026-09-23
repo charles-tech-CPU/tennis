@@ -4,9 +4,8 @@ import com.charles.tennisresults.dto.PlayerCreateDto;
 import com.charles.tennisresults.dto.PlayerDto;
 import com.charles.tennisresults.service.PlayerService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/players")

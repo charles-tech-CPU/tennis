@@ -6,7 +6,6 @@ import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.dto.TournamentStatus;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -32,16 +31,16 @@ public final class TournamentProgress {
     private final Map<Long, List<Match>> decidedByTournamentId;
     private final Map<Long, Tournament> qualifyingByMainId;
 
-    public static TournamentProgress compute(TournamentRepository tournamentRepository,
-                                              MatchRepository matchRepository,
-                                              List<Tournament> mains) {
+    public static TournamentProgress compute(
+            TournamentRepository tournamentRepository, MatchRepository matchRepository, List<Tournament> mains) {
         List<Tournament> allTournaments = tournamentRepository.findAll();
         Map<Long, Tournament> qualifyingByMainId = allTournaments.stream()
                 .filter(Tournament::isQualifying)
                 .filter(t -> t.getMainTournamentId() != null)
                 .collect(Collectors.toMap(Tournament::getMainTournamentId, t -> t, (a, b) -> a));
 
-        List<Long> relevantIds = new ArrayList<>(mains.stream().map(Tournament::getId).toList());
+        List<Long> relevantIds =
+                new ArrayList<>(mains.stream().map(Tournament::getId).toList());
         qualifyingByMainId.values().forEach(q -> relevantIds.add(q.getId()));
 
         List<Match> decided = matchRepository.findByTournament_IdInAndStatusIn(
@@ -60,9 +59,8 @@ public final class TournamentProgress {
     public TournamentStatus statusOf(Tournament main) {
         List<Match> ownDecided = decidedByTournamentId.getOrDefault(main.getId(), List.of());
         Tournament qualifying = qualifyingByMainId.get(main.getId());
-        List<Match> qualifyingDecided = qualifying != null
-                ? decidedByTournamentId.getOrDefault(qualifying.getId(), List.of())
-                : List.of();
+        List<Match> qualifyingDecided =
+                qualifying != null ? decidedByTournamentId.getOrDefault(qualifying.getId(), List.of()) : List.of();
 
         if (ownDecided.isEmpty() && qualifyingDecided.isEmpty()) {
             return TournamentStatus.NOT_STARTED;
