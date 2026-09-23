@@ -124,6 +124,8 @@ a:hover { text-decoration: underline; }
 
 main { padding: 28px; max-width: 1180px; margin: 0 auto; }
 main.wide { max-width: 1720px; }
+/* Classement : tableau tres large (une colonne par tournoi), on prend tout l'ecran. */
+main.full { max-width: none; padding-left: 12px; padding-right: 12px; }
 
 .page-header {
   display: flex;
@@ -274,6 +276,9 @@ tbody tr:hover { background: var(--surface-alt); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.rank { font-weight: 700; color: var(--text-muted); width: 40px; }
 tr.rank-1 td.rank { color: var(--gold-soft-text); }
+td.actions-cell { white-space: nowrap; width: 1%; }
+td.actions-cell button { margin-right: 8px; }
+td.actions-cell button:last-child { margin-right: 0; }
 
 /* Statut d'un tournoi (calcule d'apres ses matchs, voir TournamentStatus cote
    backend) : terminé = finale jouée (vert uniforme) ; en cours = au moins un
@@ -663,4 +668,110 @@ tbody tr.status-completed:hover { background: var(--grass-soft); }
   .topbar { flex-wrap: wrap; padding: 10px 16px; }
   main { padding: 16px; }
   th, td { padding: 9px 10px; }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Coupe Davis / United Cup                                               */
+/* ---------------------------------------------------------------------- */
+.team-note { margin-top: 14px; }
+button.small { padding: 3px 10px; font-size: 12px; }
+
+.tie-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.tie-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: 10px 12px;
+  font-weight: 400;
+}
+.tie-card:hover { background: var(--surface-alt); border-color: var(--border-strong); }
+.tie-card.pending { border-style: dashed; }
+.tie-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 0; }
+.tie-team { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.tie-team .placeholder { color: var(--text-faint); font-style: italic; }
+.tie-row.won { font-weight: 700; }
+.tie-row.lost { color: var(--text-muted); }
+.tie-score {
+  min-width: 26px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  background: var(--neutral-soft);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+}
+.tie-row.won .tie-score { background: var(--grass-soft); color: var(--grass-soft-text); }
+.tie-meta { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
+.tie-card.compact { padding: 6px 10px; box-shadow: none; }
+
+.ko-bracket {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: 28px;
+  margin-top: 14px;
+  overflow-x: auto;
+}
+.ko-column { display: flex; flex-direction: column; }
+.ko-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin: 0 0 10px; }
+.ko-ties { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 14px; }
+
+.group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 16px;
+  margin-top: 14px;
+}
+.group-card { margin-bottom: 0; padding: 16px; }
+.group-title { margin: 0 0 10px; font-size: 16px; }
+.group-title span { color: var(--text-muted); font-weight: 400; font-size: 14px; }
+.group-table { margin-bottom: 12px; }
+.group-table th, .group-table td { padding: 6px 8px; white-space: nowrap; }
+.group-table tr.qualified td { font-weight: 700; }
+.group-ties { display: flex; flex-direction: column; gap: 6px; }
+
+.score-editor .card.tie-detail { width: 620px; max-width: 100%; max-height: 90vh; overflow-y: auto; }
+.tie-detail-head { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+.tie-detail-team { display: inline-flex; align-items: center; gap: 8px; font-size: 17px; }
+.tie-detail-team.right { justify-content: flex-end; }
+.tie-detail-team.won { font-weight: 700; }
+.tie-detail-score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tie-detail-meta { color: var(--text-muted); font-size: 13px; margin: 6px 0 14px; }
+.rubber { border-top: 1px solid var(--border); padding: 10px 0; }
+.rubber-label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+.rubber-label button { margin-left: auto; text-transform: none; letter-spacing: 0; }
+.rubber-line { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px; align-items: center; font-size: 14px; }
+.rubber-players.right { text-align: right; }
+.rubber-players.won { font-weight: 700; }
+.rubber-score { font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.rubber-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.score-editor .rubber-form label { display: inline-flex; margin-bottom: 0; }
+.rubber-actions { margin-top: 10px; justify-content: flex-end; }
+
+@media (max-width: 640px) {
+  .ko-bracket { grid-template-columns: repeat(3, 240px); }
+  .group-grid { grid-template-columns: 1fr; }
+  .rubber-form-grid { grid-template-columns: 1fr; }
+}
+.phase-toolbar { display: flex; justify-content: flex-end; gap: 8px; margin: 10px 0; }
+.team-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; margin: 12px 0; }
+.score-editor label.stacked { display: flex; flex-direction: column; align-items: stretch; gap: 4px; border: none; padding: 0; margin: 0; font-size: 12px; color: var(--text-muted); cursor: default; }
+.score-editor label.stacked input { margin-bottom: 0; }
+.score-editor .card.bracket-form { width: 780px; }
+.quarter-row { display: grid; grid-template-columns: 36px 1fr auto 1fr 170px; gap: 8px; align-items: center; margin-bottom: 8px; }
+.score-editor .quarter-row input { margin-bottom: 0; }
+.quarter-label { font-weight: 700; color: var(--text-muted); font-size: 12px; }
+@media (max-width: 640px) {
+  .team-form-grid { grid-template-columns: 1fr; }
+  .quarter-row { grid-template-columns: 34px 1fr auto 1fr; }
+  .quarter-row input { grid-column: 2 / -1; }
 }

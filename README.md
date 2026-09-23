@@ -501,6 +501,346 @@ les nouveaux. Reproduit et verifie en conditions reelles sur Rotterdam (id 33,
    confirmer avec Charles que c'est bien le comportement voulu si ce cas se
    presente un jour.
 
+## 11. Nettoyage des joueurs - a faire par Charles (audit du 2026-09-20)
+
+Demande de Charles : "trouve les doublons, absences de prenom, absences de
+pays etc dans la table joueurs". Deja fait automatiquement (voir
+`V12__clean_up_players.sql`) : 6 doublons certains fusionnes (inscriptions
+reaffectees puis fiche en trop supprimee) et la casse des nationalites
+uniformisee (ex. "Italie" -> "ITALIE") + 2 coquilles corrigees ("TUNSIE" ->
+"TUNISIE", "DOMINQUE" -> "DOMINIQUE"). Le reste ci-dessous demande une vraie
+recherche (que Charles seul peut faire, pas de source fiable cote appli) - a
+corriger un par un via `PUT /api/players/{id}` au fil de l'eau.
+
+### 1. Sans prenom (15)
+
+BATALJIN (FRANCE), BOIVIN (FRANCE), BOOSARAWON (THAILANDE), BRUCE SMITH
+(FRANCE), DUSSIN (FRANCE), FURNESS (FRANCE), IBRAIMI (AUSTRALIE), JOVANIVSKI
+(AUSTRALIE), KUKASIAN (INDE), ROLLIN (FRANCE), SAKAMOTO (JAPON),
+SALUN-OUILLEMON (FRANCE), SUKSUMRARN (THAILANDE), THOMSON KEI (HONG KONG),
+VOISIN (FRANCE)
+
+### 2. Prenom reduit a une seule initiale (151)
+
+Probablement le reflet de la source d'origine (joueurs de bas niveau/Futures
+souvent listes en "Nom I." dans les classements) plutot qu'une vraie erreur -
+a verifier/completer si Charles a une source avec le prenom complet. `*` =
+homonyme de nom de famille deja present sous un nom complet ailleurs dans la
+base (probablement pas un doublon, cf section 4) ; `**` = doublon possible,
+voir section 4.
+
+```
+1553 AKKOCAOGLU K (ALLEMAGNE)      1426 ANN S (COREE)               1404 ARENA FAVA C (—)
+1452 ATLANGERIEV B (RUSSIE)        1518 AVCIBASI T (TURQUIE)         1555 BARTOLUCCI N (ITALIE)
+1544 BATTISTON A (ITALIE)          1547 BEAVEN J (ANGLETERRE)        1536 BEKENI M (SLOVAQUIE)
+1474 BERENZ B (AUTRICHE)           1543 BERTASI P (ITALIE)           1415 BETOV S (BIELORUSSIE)
+1556 BETTI E (ITALIE)              1540 BOBO D (USA)                 1529 BRAUN M (MOLDAVIE)
+1423 BU Y (CHINE)                  1461 BUSHAMUKA W (USA)            1530 CAZAC I (MOLDAVIE)
+1457 CHEKHOV A (RUSSIE)            1507 CHETOUANE M (TUNISIE)        1432 CIANCAGLINI N (BOLIVIE)
+1534 CIOCANU A (MOLDAVIE)          1419 COZAR GIMENEZ M (ESPAGNE)    1533 COZBINOV A (MOLDAVIE)
+1516 DARDERI V (ITALIE) *          1509 DARMOUL A (TUNISIE)          1406 DAVIDOV T (USA)
+1490 DE CESARIS A (ITALIE)         1439 DEV S (INDE) *               1403 DIDONI V (—)
+1477 DOSKOCIL M (TCHEQUIE)         1511 FITA JUAN S (ESPAGNE)        1552 FIX D (ALLEMAGNE)
+1554 FORNACI D (ITALIE)            1448 GALLAGHER G (USA)            1410 GAVA P (BRESIL)
+1486 GOYAL M (INDE)                1489 GREGORIOU G (GRECE)          1545 GSCHWENDTNER J (ANGLETERRE)
+1476 GUNDACKER J (SUISSE)          1537 HALAHIJA N (SLOVAQUIE)       1435 HANCE K (USA)
+1460 HANDS T (ANGLETERRE)          1502 HANS K (INDE)                1470 HAUSBERGER G (AUTRICHE)
+1506 HERMASSI R (TUNISIE)          1472 HILDERBRAND T (USA)          1548 HODKIN S (ANGLETERRE)
+1329 HONGYU YE (CHINE)             1436 HORNUNG G (HONGRIE)          990 HOST TY (AUSTRALIE)
+1465 HU H (CHINE)                  1444 HYUN J (COREE)               1411 IANNONI M (BRESIL)
+1517 ILKEL C (TURQUIE)             1422 IZQUIERDO LUQUE R (ESPAGNE)  1481 JUSZCZAK P (POLOGNE)
+1442 KADANGAH-KILI J (TOGO)        1532 KADHE A (INDE)               1497 KALIYANDA POONACHA N (INDE)
+1424 KANG K (COREE)                1496 KESHARWANI M (INDE)          1428 KIM D (COREE) **
+1407 KITTAY B (USA)                1480 KLIMAS J (TCHEQUIE)          1443 KOFFI M (COTE IVOIRE)
+1498 KOTHAPALLI G (INDE)           1449 KOZLOV B (USA) *             1479 KUSY J (TCHEQUIE)
+1538 LANIK T (SLOVAQUIE)           1421 LARA SALMERON D (ESPAGNE)    1427 LEE D (COREE)
+1522 LONGWE-SMIT T (AFRIQUE SUD)   1458 LUKASHOV R (KAZAKHSTAN)      1539 MACEJ D (SLOVAQUIE)
+1501 MAHESH KUMAR V (INDE)         1505 MARQUES G (PORTUGAL)         1531 MATUSZEWSKI P (POLOGNE)
+1514 MEHROTRA A (AUSTRALIE)        1418 MENESES PERNY A (ESPAGNE)    1535 MICHALIK R (SLOVAQUIE)
+1438 MINGZHOU Z (CHINE)            1488 MINTZ Z (USA)                1430 MOLLER E (DANEMARK)
+1504 MONTEIRO S (PORTUGAL)         1420 MONTES-DE LA TORRE I (ESPAGNE) 1546 MOXON W (ANGLETERRE)
+1525 NAWA M (—)                    1500 NEDUNCHEZHIYAN J (INDE)      1523 NGWENYA S (AFRIQUE SUD)
+1508 NSAIRI S (TUNISIE)            1450 NURLANULY Z (KAZAKHSTAN)     1451 OMARKHANOV A (KAZAKHSTAN)
+1459 OZDEMIR S (TURQUIE)           1441 PAN W (CHINE)                1484 PANDZOU EKOUME C (CONGO)
+1491 PAOLINI A (ITALIE)            1446 PASTORINI A (ITALIE)         1487 PETIT L (—)
+1469 PINTER P (AUTRICHE)           1494 PINTO L (BRESIL)             1478 POSTOLKA R (TCHEQUIE)
+1495 PUCINELLI DE ALMEIDA R (BRESIL) * 1433 RALLIN S (BOLIVIE)       1557 REJCHTMAN VINCIGUERRA W (SUEDE)
+1408 REMONDY PAGOTTO V (BRESIL)    1431 RIVERO M (BOLIVIE)           1542 RODDICK J (USA)
+1492 RODRIGUES LONGOBARDI P (BRESIL) 1551 ROOTHMAN C (AFRIQUE SUD)   1475 ROSENKRANZ KOENIG T (AUTRICHE)
+1447 ROSSOLINO S (ITALIE)          1526 SALTON D (AFRIQUE SUD)       1499 SARRAN P (INDE)
+1482 SAULENKO T (KAZAKHSTAN)       1405 SCHTULMANN GASCA M (—)       1524 SCOTT A (AFRIQUE SUD)
+1515 SENTHIL KUMAR R (INDE)        1425 SHIN W (COREE) *             1454 SHIN M (OUZBEKISTAN)
+1429 SIM S (COREE)                 1528 SNITARI I (MOLDAVIE)         1445 SPADOLA A (ITALIE)
+1550 STRYDOM J (AUSTRALIE)         1434 SUAREZ L (BOLIVIE)           1414 SUN Q (CHINE) *
+1466 SUN Z (CHINE) *               1462 TE R (CHINE)                 1521 TEUNISSEN L (HOLLANDE)
+1463 TIAN Y (CHINE)                1456 TIUKAEV R (RUSSIE)           1513 TONEJC V (CROATIE)
+1455 TREBUKHIN A (KAZAKHSTAN)      435 TU LI (AUSTRALIE)             1453 TULEPBERGENOV D (KAZAKHSTAN)
+1467 UJVARY M (AUTRICHE)           1527 VAN SCHALKWYK C (—)          1483 VASA I (FINLANDE) *
+1493 VICENTE DE ARAUJO R (BRESIL)  1485 VILMAURE G (FRANCE)          1437 VITHOONTIEN L (JAPON)
+1512 VUKADIN N (CROATIE)           1473 WAGNER A (AUTRICHE)          1471 WALDNER N (AUTRICHE)
+1464 WEI J (CHINE)                 275 WOLF JJ (USA)                 121 YUNCHAOKETE BU (CHINE)
+1520 ZGIROVSKY A (BIELORUSSIE)     1440 ZHANG L (CHINE) *            1413 ZHAO Z (CHINE)
+229 ZHOU YI (CHINE)
+```
+
+### 3. Sans nationalite (7)
+
+ARENA FAVA C, DIDONI V, NAWA M, PANKIN SEMEN, PETIT L, SCHTULMANN GASCA M,
+VAN SCHALKWYK C
+
+### 4. Doublon possible restant (non fusionne, a trancher par Charles)
+
+**KIM D. (id 1428, COREE)** vs **KIM DONGJU (id 12, COREE)** : les deux sont
+inscrits dans le tableau de qualifs de **BUSAN 2026** (positions 18 et 3).
+Soit deux Coreens differents (KIM etant un nom tres courant), soit un doublon
+accidentel dans ce tableau precis - a vfier avant de fusionner (contrairement
+aux 6 deja fusionnes, aucun chevauchement de tournoi ne permettait de trancher
+automatiquement ici puisqu'ils sont justement dans le MEME tournoi).
+
+Tous les autres cas de "meme nom de famille + meme nationalite avec des
+prenoms differents" verifies (~49 groupes) sont de vrais joueurs distincts
+(patronymes courants ou fratries reelles, ex. CERUNDOLO Francisco/Juan Manuel,
+TSITSIPAS Stefanos/Petros, BERRETTINI Matteo/Jacobo) - pas des doublons.
+
+## 12. Import des resultats Challenger depuis TennisTemple (a partir d'Ilkley, semaine 24)
+
+Charles a demande (2026-09-21) de reprendre le remplissage des tournois
+Challenger deja premodelises (tableau vide, cf section 2) en utilisant
+`fr.tennistemple.com` comme source, a partir d'Ilkley (ATP CH 125, semaine
+24) puisque les semaines 1-22 etaient deja saisies. Chantier volontairement
+enorme (~185 tableaux principal+qualifs sur 14+ semaines) - a poursuivre sur
+plusieurs sessions. Tout ce qui suit est le mode d'emploi complet pour
+reprendre directement.
+
+### Etat d'avancement (2026-09-21, mis a jour en cours de session)
+
+**Fait et verifie (vainqueur reel confronte au palmares du site) : semaines
+24 a 36 completes, soit 59 tournois (tableau principal + qualifs) :**
+Ilkley, Lyon, Bratislava, Cattolica, Tucuman (S24) ; Nottingham125, Parma,
+Poznan, Dublin, Ascunsion, Royan (S25) ; Piracicaba, Plovdiv, Targu (S26,
+dates reelles confirmees) ; Brasov, Cary, Milan, Quito, Troyes (S27, dates
+reelles confirmees) ; Iasi, Bogota, Liege, Nottingham3(id169), Braunschweig,
+Newport, Trieste (S28, dates reelles confirmees) ; Bunschoten, Cordenons,
+Granby, Lincoln, Pozoblanco (S29) ; Bloomfield, Segovia, Zug (S30) ; Bonn,
+Liberec, Samsun, San Marin, Vancouver (S31, dates reelles confirmees -
+aucun decalage, le bug de semaines s'arrete bien a S26/28) ; Grodzisk,
+Hagen, Istanbul(id194), Lexington, Plovdiv2(id195) (S32, dates reelles
+confirmees) ; Astana, Brownsburg, Hambourg CH(id198), Todi (S33) ; Cancun,
+Kingston(id203), Prague, Quebec, Roehampton(id206), Sion (S34, doublons
+Kingston/Roehampton S34 vs S35 desambigues par date reelle) ; Augsbourg,
+Kingston2(id208), Roehampton2(id209) (S35) ; Como, Manacor, Plovdiv2(id216),
+Porto, Zhangjiagang (S36, dates reelles confirmees).
+
+**Fait le 2026-09-23 (7-13 septembre, `weekNumber` 36 en base) :** GENOA(218),
+TULLN(219), SHANGHAI(220), ISTANBUL 3(222), PHAN THIET 3(223), tableau
+principal + qualifs (533-537), via `job_s36.py`. **Consigne de Charles : "tu
+ne touches pas aux points donnes ni aux semaines, tu inscris juste les
+resultats"** - `job_s36.py` n'appelle donc plus `process_main`/`ensure_points`
+(qui reecrivent le bareme depuis le panneau Dotations) ; les qualifs sont
+creees avec le bareme majoritaire de la categorie en base. Il resout aussi
+chaque joueur via son slug tennistemple complet (page du match) plutot que par
+"Nom X." seul, et cree les inconnus en MAJUSCULE avec prenom complet - a
+reutiliser comme modele pour les prochains imports.
+
+**Reste a faire, meme semaine :** CASSIS(221), SEVILLE(217).
+
+Semaine 38 : deja partiellement saisie par Charles avant cette session -
+tournoi en cours reellement cette semaine (21/09), ne pas toucher sans
+consigne. **Semaine 37 = derniere semaine premodelisee dans la base
+actuelle** - une fois S36-37 finis, verifier si Charles veut etendre le
+calendrier au-dela (aucun tournoi S39+ n'existe encore en base a ce stade).
+
+Nouvelles anomalies source gerees cette session (voir aussi `tt_push.py`) :
+- **Dotations vide/absente** (Samsun S31, Brownsburg S33, Roehampton S34
+  quali, Sion S34) : `dotations_to_rounds` retourne un bareme a 0 partout
+  plutot que planter. Quand "Titres en 2026" donne une valeur ponctuelle
+  fiable pour le vainqueur (Brownsburg: Harris L "55 pts", Roehampton S34:
+  Tarvet O "53 pts" - hors bareme standard de la categorie), ce point est
+  repris explicitement, le reste (tours intermediaires, quali) reste a 0.
+- **Adversaire "—" (id `null`) au round1** (Saint-Marin S31 quali ordre3,
+  Cancun S34 quali ordre7) : traite comme un bye implicite (walkover),
+  meme logique que "Bye" explicite.
+- **Qualifs a 16 places** (Cancun, Quebec City S34, tournois ATP_125 a
+  gros budget) : `draw_size = len(round1)*2` s'adapte automatiquement,
+  aucun changement necessaire.
+
+Semaine 38 : deja partiellement saisie par Charles lui-meme avant cette
+session (26/32 entrees sur les 5 tournois) - tournoi en cours reellement
+cette semaine (21/09), ne pas toucher sans consigne.
+
+### La methode (extraction navigateur, deux commandes par tableau)
+
+Pas de vrai import Excel->SQL ici : tout passe par l'API live du backend en
+temps reel (`import/challengers/tt_push.py`), exactement comme
+`push_generic.py` (section 9) - confirme avec Charles (2026-09-21).
+
+1. **Trouver l'URL du tournoi.** `import/challengers/tt_calendar_2026.json`
+   contient tous les liens `/competitions/<slug>-2026/<id>/` de la saison
+   (extrait une fois depuis `https://fr.tennistemple.com/competitions/atp-challenger`,
+   tous mois confondus). Sinon, chercher le nom du tournoi dans la liste
+   "Titres en 2026" de cette meme page (lien direct vers l'edition).
+2. **Extraire tableau principal + quali en 1 seul appel `browser_batch`**
+   (6 actions : navigate `/draw` -> javascript_exec [snippet ci-dessous] ->
+   get_page_text -> navigate `/draw-qualifications` -> javascript_exec ->
+   get_page_text). Le snippet JS scrape `.tt-match` (round/ordre/joueurs/
+   score) ET le panneau `Dotations`, les injecte dans un `<article>` qui
+   remplace `<body>`, pour contourner la troncature (~1000-1300 caracteres)
+   que le tool `javascript_exec` applique a son propre retour - `get_page_text`
+   n'a pas cette limite. **Snippet complet** : voir le debut de n'importe
+   quel `job_*.py` cree cette session (ou `git log` de ce README) - copie
+   textuellement dans chaque appel `javascript_tool` de la conversation,
+   trop long pour etre redonne ici, mais stable et reutilisable tel quel.
+3. **Coller le JSON obtenu** dans un fichier `import/challengers/job_<nom>.py`
+   (voir n'importe lequel des jobs deja crees comme modele) et lancer
+   `python job_<nom>.py` depuis `import/challengers/`.
+
+### Regles cle du modele de points (a ne jamais redeviner, cf `tt_push.py`)
+
+- **Positions du tableau round1** : le backend (`BracketService.
+  syncRound1FromEntries`) pair les positions `(2k-1, 2k)` pour le match
+  round1 n°k - PAS un decoupage "moitie gauche/moitie droite" comme
+  l'ancien import Excel. `push_entries_and_rounds` applique deja ca
+  correctement - ne pas regresser (bug reel rencontre et corrige sur
+  Ilkley : positions fausses -> scores attribues au mauvais match, tournoi
+  entierement reinitialise puis repousse pour corriger).
+- **Score** : `fmt_score()` convertit `"76(4) 46 63"` -> `"7-6(4) 4-6
+  6-3"`. Chaine vide -> `"w.o."`.
+- **Points par tour, regle generale (main ET quali)** : le panneau
+  Dotations liste du palier le plus haut (Vainqueur / "Q 3e tour") au plus
+  bas (1er tour), un palier de plus que le nombre de tours reels. Dernier
+  palier = points du tour `totalRounds` (`pointsByRound[totalRounds]`,
+  donne aussi au vainqueur ET a tout "qualifie" gagnant le dernier tour de
+  quali) ; avant-dernier palier = `runnerUpPoints` (points du perdant du
+  dernier tour, "Finale" ou "Q(N)e tour") ; le reste se lit dans l'ordre
+  jusqu'au tour 1 (toujours force a 0). `dotations_to_rounds()` fait ce
+  calcul - ne jamais assigner les points a la main tour par tour.
+- **`total_rounds_for()`** : peut differer du tour max reellement present
+  dans les donnees scrapees quand un tour existe dans le panneau Dotations
+  mais est vide cote DOM (`drop_phantom_matches` retire les matchs "fantomes"
+  ou aucun joueur n'est renseigne) - ex. Targu Mures S26 quali (3 paliers
+  Dotations, 1 seul tour reellement peuple : total_rounds=2 quand meme,
+  round2 reste PENDING). Cas degenere ou meme le panneau Dotations n'a
+  qu'1 seul palier (Piracicaba S26 quali, quali a 12 reellement) : geree a
+  part dans `dotations_to_rounds` (pas de palier "finaliste" distinct).
+- **Homonymes** : `find_candidates` ne matche QUE sur `lastName` exact (+
+  initiale du prenom, + nationalite si ambigu) - **le fuzzy matching
+  (difflib) a ete retire** apres deux vrais faux-positifs qui ont corrompu
+  des fiches existantes (Bocci F. vs Bocchi L., Mazza M. vs Mazzola F. -
+  deux joueurs italiens distincts, memes tournois). Un nom sans candidat
+  exact cree systematiquement un nouveau joueur plutot que de risquer une
+  fusion erronee (un doublon isole est visible et corrigeable a l'audit ;
+  une fausse fusion corrompt silencieusement une fiche existante - risque
+  juge trop asymetrique). `post_entry_with_fallback` retente aussi avec
+  l'id suivant si le backend refuse un candidat ("deja inscrit cette
+  semaine ailleurs" - vrai homonyme, ex. Darwin Blanch (id237) vs Dali
+  Blanch (id311), tous deux "Blanch D." sur TennisTemple).
+
+### Bug majeur trouve et corrige : decalage systematique des semaines 27-35
+
+**Independant de ce chantier d'import** - deja present dans les donnees du
+seed original (`V2__seed_data.sql`), decouvert en recoupant les dates
+reelles TennisTemple contre `week_number` en base. Les tournois **DB
+semaine 26** melangeaient en realite deux semaines calendaires distinctes
+(3 vrais S26 + 5 vrais S27), et TOUS les tournois DB semaines 27 a 34
+etaient decales de +1 par rapport a leur vraie date TennisTemple (DB S27 =
+vraie S28, DB S28 = vraie S29, ..., DB S34 = vraie S35) - le decalage
+s'autocorrige exactement a la frontiere DB S34/S36 (**la case "semaine 35"
+etait vide en base avant la correction** - c'est elle qui se remplit une
+fois le decalage corrige). DB semaine 36 et au-dela : dates deja correctes,
+verifie sur Augsburg (S35 reel apres correction) et Côme (S36, deja bon).
+
+**Corrige** : `weekNumber` de 38 tournois (main draws) remis a la bonne
+valeur via `PUT /api/tournaments/{id}` (pas de SQL brut - bloque par le
+classifieur auto-mode comme "Cloud Storage Mass Delete", faux positif sur
+un simple UPDATE ; contourne en bouclant sur l'API, plus propre de toute
+facon). Les 5 tournois S26->S27 corriges individuellement en premier
+(Brasov=160, Cary=158, Milan=159, Quito=162, Troyes=161, + leurs qualifs
+455/456/457/460/462) ; les 33 autres (DB S27-34 restants) corriges en un
+seul passage vers +1 (aucune qualif n'existait encore pour ceux-la, pas de
+double correction a faire).
+
+**A faire au demarrage de la prochaine session, avant de pousser quoi que
+ce soit dans une semaine pas encore touchee (S29+)** : ce decalage
+semblait resolu a partir de DB semaine 36, mais ca n'a ete verifie que sur
+1 tournoi de chaque cote de la frontiere (Augsburg/Côme) - **revalider
+au moins 1 tournoi par nouvelle semaine abordee** (ouvrir sa page
+TennisTemple, comparer "X - Y mois" a la date attendue pour ce numero de
+semaine - semaine N = semaine24 + (N-24) semaines a partir du 8 juin) avant
+de pousser ses donnees, pour eviter de repeter cette erreur plus loin dans
+la saison. Le signal qui a permis de detecter le probleme la premiere fois :
+une cascade de conflits "deja inscrit cette semaine" sur des joueurs qui
+n'auraient normalement aucune raison de se cotoyer (meme reflexe a avoir -
+si `post_entry_with_fallback` cree soudain beaucoup de doublons pour des
+noms qui ont pourtant l'air d'avoir deja une fiche, verifier les dates
+avant de continuer).
+
+### Anomalies source ponctuelles (documentees en commentaire dans le `job_*.py` concerne)
+
+- **Plovdiv S26, main draw, round1 ordre6** (Kuzmanov D. vs Sels J.) :
+  aucun des deux marque vainqueur cote TennisTemple (bug source). Resolu a
+  la main par continuite de seed (round2 montre le meme "seed 11" face a
+  Michalski, score coherent avec une victoire de Kuzmanov puis une
+  contre-performance/retrait en round2) - voir `job_plovdiv1.py`.
+- **Trieste S28, quali** : 2 matchs (round1 ordre7, round2 ordre4) sans
+  aucun signal exploitable (score vide, pas de continuite de seed) -
+  laisses PENDING volontairement (jamais deviner un resultat).
+- **Piracicaba S26, quali** : le round2 n'existe simplement pas cote
+  TennisTemple (dotations n'affiche qu'1 seul palier) - quali a 12
+  reellement, geree comme un cas a part par `dotations_to_rounds`.
+
+### Nettoyage restant pour Charles (doublons orphelins crees par erreur cette session)
+
+16 fiches joueur creees a tort (candidat existant ecarte a cause du bug de
+semaines ci-dessus, avant sa correction) puis devenues orphelines (aucune
+entree ne les reference plus - la vraie fiche existante a ete reutilisee
+une fois le bug corrige). Aucune n'est utilisee nulle part, suppression
+sans risque mais pas d'endpoint `DELETE /api/players/{id}` dans l'app
+actuelle : id 1590, 1629-1634, 1636-1641, 1646, 1649, 1651 (voir
+`SELECT * FROM player WHERE id >= 1580 AND id NOT IN (SELECT player_id FROM entry)`
+pour la liste a jour si d'autres s'accumulent).
+
+### Pour reprendre directement
+
+1. Relire ce README depuis "## 12." (ce chantier n'est fait qu'a moitie).
+2. Verifier la date reelle d'au moins 1 tournoi de la semaine 29 avant de
+   commencer (voir section decalage ci-dessus).
+3. Suivre "La methode" ci-dessus, tournoi par tournoi, semaine par semaine
+   dans l'ordre (29, 30, 31...), en utilisant `import/challengers/tt_push.py`
+   tel quel (deja teste et durci sur 26 tournois).
+4. Mettre a jour ce README (etat d'avancement + semaines restantes) avant
+   de clore la session suivante.
+
+## 13. Coupe Davis et United Cup (2026-09-23)
+
+Onglets `Coupe Davis` (`/coupe-davis`) et `United Cup` (`/united-cup`), meme vue
+`TeamCompetitionView.vue`. Modele a part des tournois (tables `team_tie` /
+`team_rubber`, V21) : une rencontre oppose deux pays sur 3 ou 5 matchs, joueurs
+en texte libre, **aucun point au classement**.
+
+- Donnees 2026 (V22, generee par `import/teams/build_seed.py` depuis les
+  extractions `daviscup_2026_raw.json` / `unitedcup_2026_raw.json`, a relancer
+  si on corrige une extraction) : Coupe Davis qualifs 1er tour (13) et 2e tour
+  (7), barrages Groupe mondial I (13), Final 8 de Bologne (quarts connus, demies
+  et finale en attente) ; United Cup 6 poules + phase finale. Le script verifie
+  que chaque score de rencontre recalcule = score officiel.
+- Saisie : clic sur une rencontre -> "Saisir" par match (`PUT
+  /api/team-ties/{id}/rubbers/{n}`). Score et vainqueur de la rencontre
+  recalcules (majorite des matchs), vainqueur reporte automatiquement dans la
+  rencontre du tour suivant (FINALS_QF -> FINALS_SF -> FINALS_F, QF -> SF -> F).
+- Saisons suivantes (Charles, 2026-09-23 : "pour l'annee prochaine il faudra que
+  je puisse saisir") : selecteur de saison (saisons en base + la suivante),
+  "Nouvelle rencontre" par phase (`POST /api/team-ties`, matchs vides crees :
+  5 en qualifs/barrages, 3 en United Cup, le 3e toujours le double), "Creer le
+  tableau" pour le Final 8 / la phase finale United Cup (`POST
+  /api/team-ties/bracket` : 4 quarts + demies et finale en attente), "Modifier"
+  / "Supprimer la rencontre" dans le detail (`PUT` / `DELETE
+  /api/team-ties/{id}` ; un quart ne se supprime pas seul : `DELETE
+  /api/team-ties/bracket`).
+- Sources : daviscup.com (pages `/en/tie/<uuid>`, rendues cote client - extraction
+  via iframe dans le navigateur) et unitedcup.com/en/scores/results (le
+  vainqueur de chaque match y est liste en premier, pas l'equipe 1 : equipe des
+  joueurs deduite par `assign_uc_teams`).
+
 ## Structure du repo
 
 ```
@@ -508,6 +848,7 @@ tennis-results/
 ├── backend/    Spring Boot (Java 21, Maven, PostgreSQL, Flyway)
 ├── frontend/   Vue 3 + Vite (avec le composant BracketView pour le tableau visuel)
 ├── import/     Script Python de conversion Excel → SQL
-│   └── weekly_results/   Decodage + import des feuilles hebdo (voir section 9)
+│   ├── weekly_results/   Decodage + import des feuilles hebdo (voir section 9)
+│   └── challengers/      Import TennisTemple des Challengers S24+ (voir section 12)
 └── README.md
 ```

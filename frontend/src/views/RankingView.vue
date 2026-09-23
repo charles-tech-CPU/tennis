@@ -11,6 +11,10 @@
 
   <div class="filters">
     <input v-model="search" placeholder="Rechercher un joueur..." />
+    <select v-model="countryFilter">
+      <option value="">Tous les pays</option>
+      <option v-for="c in countries" :key="c.name" :value="c.name">{{ c.name }} ({{ c.count }})</option>
+    </select>
   </div>
 
   <p class="callout">
@@ -117,7 +121,7 @@
   </div>
   <div v-else-if="loaded && rows.length" class="empty-state">
     <div class="icon">🎾</div>
-    <p>Aucun joueur ne correspond à la recherche.</p>
+    <p>Aucun joueur ne correspond à la recherche ou au pays choisi.</p>
   </div>
   <div v-else-if="loaded" class="empty-state">
     <div class="icon">🏆</div>
@@ -132,6 +136,7 @@ import { mandatorySlotLabel, countryFlagIso, hslColor } from '../labels'
 
 const rows = ref([])
 const search = ref('')
+const countryFilter = ref('')
 const loaded = ref(false)
 const contentWidth = ref(0)
 const scrollTopEl = ref(null)
@@ -190,6 +195,19 @@ const filteredRows = computed(() => {
   return rows.value
     .map((r, i) => ({ r, rank: i + 1 }))
     .filter(({ r }) => !q || `${r.lastName} ${r.firstName ?? ''}`.toLowerCase().includes(q))
+    .filter(({ r }) => !countryFilter.value || (r.nationality ?? '') === countryFilter.value)
+})
+
+// Pays presents au classement (et non la liste complete COUNTRY_NAMES), avec
+// le nombre de joueurs classes pour chacun.
+const countries = computed(() => {
+  const counts = new Map()
+  for (const r of rows.value) {
+    if (r.nationality) counts.set(r.nationality, (counts.get(r.nationality) ?? 0) + 1)
+  }
+  return [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => a.name.localeCompare(b.name))
 })
 
 const liveTournamentsLegend = computed(() => {

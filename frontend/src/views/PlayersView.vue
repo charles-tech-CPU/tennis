@@ -13,16 +13,30 @@
   <div v-if="filtered.length" class="table-card">
     <table>
       <thead>
-        <tr><th>Nom</th><th>Prénom</th><th>Nationalité</th></tr>
+        <tr><th>Nom</th><th>Prénom</th><th>Nationalité</th><th></th></tr>
       </thead>
       <tbody>
         <tr v-for="p in filtered" :key="p.id">
-          <td>{{ p.lastName }}</td>
-          <td>{{ p.firstName ?? '—' }}</td>
-          <td class="nation-cell">
-            <span v-if="countryFlagIso(p.nationality)" class="fi" :class="`fi-${countryFlagIso(p.nationality)}`"></span>
-            {{ p.nationality ?? '—' }}
-          </td>
+          <template v-if="editingId === p.id">
+            <td><input v-model="editForm.lastName" required /></td>
+            <td><input v-model="editForm.firstName" /></td>
+            <td><input v-model="editForm.nationality" /></td>
+            <td class="actions-cell">
+              <button type="button" @click="saveEdit(p.id)">Enregistrer</button>
+              <button type="button" class="secondary" @click="cancelEdit">Annuler</button>
+            </td>
+          </template>
+          <template v-else>
+            <td>{{ p.lastName }}</td>
+            <td>{{ p.firstName ?? '—' }}</td>
+            <td class="nation-cell">
+              <span v-if="countryFlagIso(p.nationality)" class="fi" :class="`fi-${countryFlagIso(p.nationality)}`"></span>
+              {{ p.nationality ?? '—' }}
+            </td>
+            <td class="actions-cell">
+              <button type="button" class="secondary" @click="startEdit(p)">Modifier</button>
+            </td>
+          </template>
         </tr>
       </tbody>
     </table>
@@ -49,6 +63,8 @@ import { countryFlagIso } from '../labels'
 const players = ref([])
 const search = ref('')
 const form = reactive({ lastName: '', firstName: '', nationality: '' })
+const editingId = ref(null)
+const editForm = reactive({ lastName: '', firstName: '', nationality: '' })
 
 const filtered = computed(() => players.value.filter(p =>
   !search.value || p.lastName.toLowerCase().includes(search.value.toLowerCase())
@@ -63,6 +79,23 @@ async function submit() {
   form.lastName = ''
   form.firstName = ''
   form.nationality = ''
+  await load()
+}
+
+function startEdit(p) {
+  editingId.value = p.id
+  editForm.lastName = p.lastName
+  editForm.firstName = p.firstName ?? ''
+  editForm.nationality = p.nationality ?? ''
+}
+
+function cancelEdit() {
+  editingId.value = null
+}
+
+async function saveEdit(id) {
+  await api.updatePlayer(id, { ...editForm })
+  editingId.value = null
   await load()
 }
 

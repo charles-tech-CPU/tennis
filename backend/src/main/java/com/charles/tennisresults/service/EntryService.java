@@ -102,6 +102,10 @@ public class EntryService {
      * Consequence acceptee : les points de classement d'un joueur peuvent
      * temporairement compter pour 2 tournois a la fois dans ces cas, a
      * corriger manuellement si besoin.
+     *
+     * Canada et Cincinnati ajoutes a la liste (Charles, 2026-09-23) : leurs
+     * qualifs commencent en debut de semaine, un joueur peut donc legitimement
+     * y figurer tout en etant inscrit a un autre tournoi de la meme semaine.
      */
     private void checkSameWeekConflict(Tournament tournament, Player player) {
         if (tournament.getWeekNumber() == null) {
@@ -135,7 +139,9 @@ public class EntryService {
             "MIAMI", "MIAMI - QUALIFS",
             "INDIAN WELLS", "INDIAN WELLS - QUALIFS",
             "MADRID", "MADRID - QUALIFS",
-            "ROME", "ROME - QUALIFS");
+            "ROME", "ROME - QUALIFS",
+            "CANADA", "CANADA - QUALIFS",
+            "CINCINNATI", "CINCINNATI - QUALIFS");
 
     private static boolean isExemptFromWeekConflict(Tournament t) {
         return t.getName() != null && WEEK_CONFLICT_EXEMPT_NAMES.contains(t.getName().toUpperCase());

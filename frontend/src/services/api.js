@@ -61,5 +61,31 @@ export default {
   // Stats
   getStats(season) {
     return client.get('/stats', { params: { season } }).then(r => r.data)
+  },
+
+  // Coupe Davis / United Cup (competition = DAVIS_CUP ou UNITED_CUP)
+  getTeamTies(competition, season) {
+    return client.get('/team-ties', { params: { competition, season } }).then(r => r.data)
+  },
+  updateTeamRubber(tieId, rubberOrder, payload) {
+    return client.put(`/team-ties/${tieId}/rubbers/${rubberOrder}`, payload).then(r => r.data)
+  },
+  getTeamSeasons(competition) {
+    return client.get('/team-ties/seasons', { params: { competition } }).then(r => r.data)
+  },
+  createTeamTie(payload) {
+    return client.post('/team-ties', payload).then(r => r.data)
+  },
+  updateTeamTie(tieId, payload) {
+    return client.put(`/team-ties/${tieId}`, payload).then(r => r.data)
+  },
+  deleteTeamTie(tieId) {
+    return client.delete(`/team-ties/${tieId}`)
+  },
+  createTeamBracket(payload) {
+    return client.post('/team-ties/bracket', payload).then(r => r.data)
+  },
+  deleteTeamBracket(competition, season) {
+    return client.delete('/team-ties/bracket', { params: { competition, season } })
   }
 }
