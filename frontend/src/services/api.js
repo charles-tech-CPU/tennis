@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const client = axios.create({ baseURL: 'http://localhost:8082/api' })
+const client = axios.create({ baseURL: `http://${window.location.hostname}:8082/api` })
 
 export default {
   // Joueurs
