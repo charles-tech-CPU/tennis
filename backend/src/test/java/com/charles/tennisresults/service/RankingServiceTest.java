@@ -179,6 +179,31 @@ class RankingServiceTest {
     }
 
     @Test
+    void lesPointsDeLAtpFinalsSontAffichesAPartSansCompterDansLeTotal() {
+        win(alcaraz, tournament("ROLAND GARROS", 2026, 22, MandatorySlot.ROLAND_GARROS, 2, 2000));
+        win(alcaraz, tournament("TURIN", 2026, 46, MandatorySlot.ATP_FINALS, 2, 1500));
+
+        RankingRowDto row = row(rankingService.computeRanking(), "ALCARAZ");
+
+        assertThat(row.atpFinals().points()).isEqualTo(1500);
+        assertThat(row.mandatorySlots()).doesNotContainKey(MandatorySlot.ATP_FINALS);
+        assertThat(row.total()).isEqualTo(2000);
+    }
+
+    @Test
+    void aucunResultatExcedentaireNEstRecycleDansLaCaseAtpFinals() {
+        // 6 "autres" comptes (5 + remplacement) + 13 excedentaires : 12 comblent les
+        // cases Grand Chelem / Masters 1000 vides, le 13e reste non comptabilise.
+        winOthers(alcaraz, 500, 400, 300, 200, 190, 180, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1);
+
+        RankingRowDto row = row(rankingService.computeRanking(), "ALCARAZ");
+
+        assertThat(row.mandatorySlots()).hasSize(12).doesNotContainKey(MandatorySlot.ATP_FINALS);
+        assertThat(row.atpFinals()).isNull();
+        assertThat(row.nonCounted()).extracting(TournamentPointsDto::points).containsExactly(1);
+    }
+
+    @Test
     void laNouvelleEditionRemplaceLAncienneDesQuElleACommence() {
         win(alcaraz, tournament("DOHA", 2026, 7, null, 2, 250));
         Tournament doha2027 = tournament("DOHA", 2027, 7, null, 4, 100, 250);

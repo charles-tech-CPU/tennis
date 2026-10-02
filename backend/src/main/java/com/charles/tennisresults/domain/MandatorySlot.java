@@ -2,7 +2,7 @@ package com.charles.tennisresults.domain;
 
 /**
  * Les 14 "cases obligatoires" du classement, comme dans le fichier Excel de Charles :
- * les 4 Grand Chelem, l'ATP Finals (M8), et les 9 Masters 1000 (dont Monte-Carlo,
+ * les 4 Grand Chelem, l'ATP Finals (M8, affiche mais hors total), et les 9 Masters 1000 (dont Monte-Carlo,
  * qui est le seul optionnel : voir RankingService pour la regle de remplacement).
  * Un tournoi (GRAND_SLAM ou MASTERS_1000) ne joue ce role que si on le lui assigne
  * explicitement - un meme MandatorySlot ne devrait avoir qu'un seul tournoi par saison.

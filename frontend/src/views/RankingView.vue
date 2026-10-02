@@ -21,8 +21,9 @@
     Classement glissant sur 52 semaines (comme le vrai circuit ATP) : pour une semaine donnée,
     seule l'édition la plus récente ayant déjà commencé compte, l'édition de l'année précédente
     à cette même semaine est automatiquement retirée dès que la nouvelle a débuté.
-    Calcul automatique : 4 Grand Chelem + ATP Finals + 8 des 9 Masters 1000 (hors Monte-Carlo) +
+    Calcul automatique : 4 Grand Chelem + 8 des 9 Masters 1000 (hors Monte-Carlo) +
     somme des 5 meilleurs autres tournois + le meilleur entre Monte-Carlo et le 6e meilleur autre tournoi.
+    L'ATP Finals ne compte pas dans le total : ses points sont affichés à part, en fin de tableau.
     Seuls les tournois avec un résultat acté (joueur éliminé ou vainqueur) comptent.
     Une case obligatoire jamais disputée (faute de classement suffisant) est comblée par le meilleur
     résultat excédentaire disponible (au-delà des 5 + remplacement) : affiché <em>en italique</em> avec
@@ -48,12 +49,12 @@
           <th rowspan="2" class="sticky-col sticky-3">Nation</th>
           <th rowspan="2" class="num total-col sticky-col sticky-4">Total</th>
           <th :colspan="grandSlamSlots.length" class="group-header gs">Grand Chelem</th>
-          <th rowspan="2" class="group-header finals">ATP Finals</th>
           <th :colspan="mastersSlots.length" class="group-header masters">Masters 1000</th>
           <th rowspan="2" class="group-header mc">Monte-Carlo</th>
           <th :colspan="5" class="group-header others">5 meilleurs autres tournois</th>
           <th rowspan="2" class="group-header repl">Remplacement</th>
           <th rowspan="2" class="group-header nc">Non comptabilisés</th>
+          <th rowspan="2" class="group-header finals" title="Tournoi des qualifiés de fin de saison : non compté dans le total">ATP Finals<br><small>(hors total)</small></th>
         </tr>
         <tr>
           <th v-for="s in grandSlamSlots" :key="s" scope="col" class="num small-head">{{ slotHeader(s) }}</th>
@@ -83,13 +84,6 @@
             </template>
             <template v-else>{{ slotDto(r, s)?.points ?? '—' }}</template>
           </td>
-          <td class="num" :class="{ 'cell-named substituted': slotDto(r, 'ATP_FINALS')?.substituted }" :style="liveCellStyle(r, slotDto(r, 'ATP_FINALS'))" :title="slotDto(r, 'ATP_FINALS')?.substituted ? `Pas de classement pour disputer ce tournoi : remplace par un resultat excedentaire (${slotDto(r, 'ATP_FINALS').tournamentName})` : null">
-            <template v-if="slotDto(r, 'ATP_FINALS')?.substituted">
-              <span class="pts">{{ slotDto(r, 'ATP_FINALS').points }}</span>
-              <span class="name">{{ slotDto(r, 'ATP_FINALS').tournamentName }}</span>
-            </template>
-            <template v-else>{{ slotDto(r, 'ATP_FINALS')?.points ?? '—' }}</template>
-          </td>
           <td v-for="s in mastersSlots" :key="s" class="num" :class="{ 'cell-named substituted': slotDto(r, s)?.substituted }" :style="liveCellStyle(r, slotDto(r, s))" :title="slotDto(r, s)?.substituted ? `Pas de classement pour disputer ce tournoi : remplace par un resultat excedentaire (${slotDto(r, s).tournamentName})` : null">
             <template v-if="slotDto(r, s)?.substituted">
               <span class="pts">{{ slotDto(r, s).points }}</span>
@@ -115,6 +109,7 @@
           <td class="non-counted">
             <span v-for="(nc, idx) in r.nonCounted" :key="idx" class="tag" :style="liveCellStyle(r, nc)">{{ nc.tournamentName }} ({{ nc.points }})</span>
           </td>
+          <td class="num" :style="liveCellStyle(r, r.atpFinals)">{{ r.atpFinals?.points ?? '—' }}</td>
         </tr>
       </tbody>
     </table>

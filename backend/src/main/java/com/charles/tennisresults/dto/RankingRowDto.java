@@ -7,7 +7,8 @@ import java.util.Map;
 /**
  * Detail du classement d'un joueur, colonne par colonne comme dans le fichier
  * Excel : une case par tournoi obligatoire (Grand Chelem + Masters 1000, hors
- * Monte-Carlo), Monte-Carlo a part (car remplacable), les 5 meilleurs "autres"
+ * Monte-Carlo), Monte-Carlo a part (car remplacable), l'ATP Finals a part
+ * (affiche mais jamais compte dans le total), les 5 meilleurs "autres"
  * tournois nommes, le remplacement retenu, et le detail de ce qui n'a PAS ete
  * comptabilise (au-dela des 5 + remplacement) - a titre informatif seulement.
  */
@@ -18,6 +19,7 @@ public record RankingRowDto(
         String nationality,
         Map<MandatorySlot, TournamentPointsDto> mandatorySlots,
         TournamentPointsDto monteCarlo,
+        TournamentPointsDto atpFinals,
         List<TournamentPointsDto> bestOthers,
         TournamentPointsDto replacement,
         List<TournamentPointsDto> nonCounted,

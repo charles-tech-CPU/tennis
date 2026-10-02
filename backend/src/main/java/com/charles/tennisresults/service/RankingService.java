@@ -17,7 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Calcule automatiquement le classement glissant de chaque joueur, en
  * reproduisant la logique de la formule Excel de Charles :
- *   total = (4 Grand Chelem + ATP Finals + 8 des 9 Masters 1000, hors Monte-Carlo)
+ *   total = (4 Grand Chelem + 8 des 9 Masters 1000, hors Monte-Carlo)
  *         + (somme des 5 meilleurs "autres" tournois)
  *         + max(points a Monte-Carlo, 6e meilleur "autre" tournoi)
  *
@@ -45,12 +45,17 @@ import org.springframework.transaction.annotation.Transactional;
  * marque "encore en jeu" (liveTournaments) pour etre repere/colore dans le
  * classement - les qualifs partagent la couleur/le statut de leur tournoi
  * principal (memes joueurs, meme evenement).
+ *
+ * L'ATP Finals ne compte PAS dans le total (Charles, 2026-09-25) : ce n'est
+ * pas une case a remplir mais le tournoi des qualifies de fin de saison. Ses
+ * points eventuels sont renvoyes a part ({@link RankingRowDto#atpFinals()}),
+ * et aucun resultat excedentaire n'y est recycle.
  */
 @Service
 public class RankingService {
 
     private static final Set<MandatorySlot> MANDATORY_EXCLUDING_MC =
-            EnumSet.complementOf(EnumSet.of(MandatorySlot.MONTE_CARLO));
+            EnumSet.complementOf(EnumSet.of(MandatorySlot.MONTE_CARLO, MandatorySlot.ATP_FINALS));
 
     private final EntryRepository entryRepository;
     private final MatchRepository matchRepository;
@@ -129,10 +134,11 @@ public class RankingService {
             Map<Long, Tournament> tournamentById,
             Map<Long, LiveTournamentDto> liveByTournamentId) {}
 
-    /** Tournois d'un joueur repartis entre cases obligatoires, Monte-Carlo et "autres" (tries par points). */
+    /** Tournois d'un joueur repartis entre cases obligatoires, Monte-Carlo, ATP Finals et "autres" (tries par points). */
     private record Buckets(
             Map<MandatorySlot, TournamentPointsDto> mandatorySlots,
             TournamentPointsDto monteCarlo,
+            TournamentPointsDto atpFinals,
             List<TournamentPointsDto> others) {}
 
     private static String identityKey(Tournament t) {
@@ -199,6 +205,7 @@ public class RankingService {
     private Buckets classify(PlayerResults results) {
         Map<MandatorySlot, TournamentPointsDto> mandatorySlots = new EnumMap<>(MandatorySlot.class);
         TournamentPointsDto monteCarlo = null;
+        TournamentPointsDto atpFinals = null;
         List<TournamentPointsDto> others = new ArrayList<>();
 
         for (Map.Entry<Long, Integer> pe : results.pointsByTournamentId().entrySet()) {
@@ -207,6 +214,8 @@ public class RankingService {
             MandatorySlot slot = tournament.getMandatorySlot();
             if (slot == MandatorySlot.MONTE_CARLO) {
                 monteCarlo = dto;
+            } else if (slot == MandatorySlot.ATP_FINALS) {
+                atpFinals = dto; // hors total
             } else if (slot != null) {
                 mandatorySlots.put(slot, dto);
             } else {
@@ -214,7 +223,7 @@ public class RankingService {
             }
         }
         others.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
-        return new Buckets(mandatorySlots, monteCarlo, others);
+        return new Buckets(mandatorySlots, monteCarlo, atpFinals, others);
     }
 
     /** Ligne de classement du joueur, ou null s'il n'a encore aucun point comptabilisable. */
@@ -257,6 +266,7 @@ public class RankingService {
                 player.getNationality(),
                 mandatorySlots,
                 monteCarlo,
+                buckets.atpFinals(),
                 bestOthers,
                 replacement,
                 nonCounted,
