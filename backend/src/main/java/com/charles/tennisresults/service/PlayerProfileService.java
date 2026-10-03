@@ -21,10 +21,13 @@ import com.charles.tennisresults.repository.TournamentRoundRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
@@ -93,7 +96,6 @@ public class PlayerProfileService {
 
         Map<Long, List<Match>> matchesByEntryId = new HashMap<>();
         List<TournamentRound> rounds = List.of();
-        Map<Long, Tournament> mainsById = Map.of();
         if (!entries.isEmpty()) {
             for (Match m : matchRepository.findByEntryIdsAndStatusIn(entryIds, DECIDED)) {
                 for (Entry side : new Entry[] {m.getEntry1(), m.getEntry2()}) {
@@ -105,15 +107,8 @@ public class PlayerProfileService {
                 }
             }
             rounds = tournamentRoundRepository.findByTournamentIdIn(tournamentIds);
-            Set<Long> mainIds = entries.stream()
-                    .map(Entry::getTournament)
-                    .filter(Tournament::isQualifying)
-                    .map(Tournament::getMainTournamentId)
-                    .filter(id -> id != null)
-                    .collect(Collectors.toSet());
-            mainsById = tournamentRepository.findAllById(mainIds).stream()
-                    .collect(Collectors.toMap(Tournament::getId, t -> t));
         }
+        Map<Long, Tournament> mainsById = mainTournamentsOfQualifying(entries);
 
         Map<Long, Map<Integer, Integer>> pointsByRound = rounds.stream()
                 .collect(Collectors.groupingBy(
@@ -136,26 +131,39 @@ public class PlayerProfileService {
             runsByMainId.computeIfAbsent(main.getId(), k -> new ArrayList<>()).add(run);
         }
 
-        List<PlayerTournamentResultDto> tournaments = new ArrayList<>();
-        for (Map.Entry<Long, List<Run>> e : runsByMainId.entrySet()) {
-            tournaments.add(result(e.getValue(), mainsById, labels));
-        }
-        tournaments.sort(MOST_RECENT_FIRST);
+        List<PlayerTournamentResultDto> tournaments = runsByMainId.values().stream()
+                .map(runs -> result(runs, mainsById, labels))
+                .sorted(MOST_RECENT_FIRST)
+                .toList();
 
         List<PlayerTournamentResultDto> titles =
                 tournaments.stream().filter(PlayerTournamentResultDto::champion).toList();
 
         return withRanking(
                 player,
-                record(entryIds, matchesByEntryId),
+                matchRecord(entryIds, matchesByEntryId),
                 titles,
                 bestByCategory(tournaments, runsByMainId),
                 tournaments);
     }
 
+    /** Tournois principaux des tableaux de qualifs disputes (aucune requete s'il n'y en a pas). */
+    private Map<Long, Tournament> mainTournamentsOfQualifying(List<Entry> entries) {
+        Set<Long> mainIds = entries.stream()
+                .map(Entry::getTournament)
+                .filter(Tournament::isQualifying)
+                .map(Tournament::getMainTournamentId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (mainIds.isEmpty()) {
+            return Map.of();
+        }
+        return tournamentRepository.findAllById(mainIds).stream().collect(Collectors.toMap(Tournament::getId, t -> t));
+    }
+
     private PlayerProfileDto withRanking(
             Player player,
-            PlayerRecordDto record,
+            PlayerRecordDto matchRecord,
             List<PlayerTournamentResultDto> titles,
             List<CategoryBestResultDto> bestByCategory,
             List<PlayerTournamentResultDto> tournaments) {
@@ -170,7 +178,14 @@ public class PlayerProfileService {
             }
         }
         return new PlayerProfileDto(
-                PlayerDto.from(player), position, total, ranking.size(), record, titles, bestByCategory, tournaments);
+                PlayerDto.from(player),
+                position,
+                total,
+                ranking.size(),
+                matchRecord,
+                titles,
+                bestByCategory,
+                tournaments);
     }
 
     /**
@@ -199,18 +214,16 @@ public class PlayerProfileService {
         return new Run(entry, r + 1, false, true, points);
     }
 
-    /** Resultat fusionne d'un tournoi : le tableau principal prime sur les qualifs. */
+    /**
+     * Resultat fusionne d'un tournoi : le tableau principal prime sur les
+     * qualifs. runs n'est jamais vide (au moins l'entree qui a cree le groupe).
+     */
     private PlayerTournamentResultDto result(
             List<Run> runs, Map<Long, Tournament> mainsById, Map<Long, Map<Integer, String>> labels) {
-        Run mainRun = runs.stream()
-                .filter(r -> !r.tournament().isQualifying())
-                .findFirst()
-                .orElse(null);
-        Run qualifyingRun = runs.stream()
-                .filter(r -> r.tournament().isQualifying())
-                .findFirst()
-                .orElse(null);
-        Run shown = mainRun != null ? mainRun : qualifyingRun;
+        Optional<Run> mainRun =
+                runs.stream().filter(r -> !r.tournament().isQualifying()).findFirst();
+        boolean viaQualifying = runs.stream().anyMatch(r -> r.tournament().isQualifying());
+        Run shown = mainRun.orElse(runs.get(0));
         Tournament t = shown.tournament();
         Tournament main = t.isQualifying() ? mainsById.getOrDefault(t.getMainTournamentId(), t) : t;
 
@@ -223,9 +236,9 @@ public class PlayerProfileService {
                 main.getWeekNumber(),
                 main.getCategory(),
                 label,
-                mainRun != null && mainRun.won(),
+                mainRun.map(Run::won).orElse(false),
                 shown.inProgress(),
-                qualifyingRun != null,
+                viaQualifying,
                 runs.stream().mapToInt(Run::points).sum());
     }
 
@@ -233,7 +246,7 @@ public class PlayerProfileService {
      * Matchs reellement joues (COMPLETED) : un bye (BYE) n'est pas un match
      * dispute et gonflerait artificiellement le nombre de victoires.
      */
-    private PlayerRecordDto record(Set<Long> entryIds, Map<Long, List<Match>> matchesByEntryId) {
+    private PlayerRecordDto matchRecord(Set<Long> entryIds, Map<Long, List<Match>> matchesByEntryId) {
         Set<Match> played = matchesByEntryId.values().stream()
                 .flatMap(List::stream)
                 .filter(m -> m.getStatus() == MatchStatus.COMPLETED)
@@ -256,9 +269,10 @@ public class PlayerProfileService {
      */
     private List<CategoryBestResultDto> bestByCategory(
             List<PlayerTournamentResultDto> tournaments, Map<Long, List<Run>> runsByMainId) {
-        Map<TournamentCategory, PlayerTournamentResultDto> best = new LinkedHashMap<>();
-        Map<TournamentCategory, Integer> bestDepth = new HashMap<>();
-        Map<TournamentCategory, Integer> times = new HashMap<>();
+        // EnumMap : parcours dans l'ordre des categories (Grand Chelem d'abord).
+        Map<TournamentCategory, PlayerTournamentResultDto> best = new EnumMap<>(TournamentCategory.class);
+        Map<TournamentCategory, Integer> bestDepth = new EnumMap<>(TournamentCategory.class);
+        Map<TournamentCategory, Integer> times = new EnumMap<>(TournamentCategory.class);
         for (PlayerTournamentResultDto r : tournaments) {
             if (r.category() == null) {
                 continue;
@@ -273,13 +287,9 @@ public class PlayerProfileService {
                 times.merge(r.category(), 1, Integer::sum);
             }
         }
-        List<CategoryBestResultDto> result = new ArrayList<>();
-        for (TournamentCategory category : TournamentCategory.values()) {
-            if (best.containsKey(category)) {
-                result.add(new CategoryBestResultDto(category, best.get(category), times.get(category)));
-            }
-        }
-        return result;
+        return best.entrySet().stream()
+                .map(e -> new CategoryBestResultDto(e.getKey(), e.getValue(), times.get(e.getKey())))
+                .toList();
     }
 
     /** Profondeur comparable d'un parcours : plus grand = meilleur. */

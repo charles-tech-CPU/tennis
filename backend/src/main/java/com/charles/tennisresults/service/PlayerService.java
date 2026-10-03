@@ -30,13 +30,23 @@ public class PlayerService {
         return PlayerDto.from(playerRepository.save(p));
     }
 
+    public PlayerDto toggleFavorite(Long id) {
+        Player p = findPlayer(id);
+        p.setFavorite(!p.isFavorite());
+        return PlayerDto.from(playerRepository.save(p));
+    }
+
     public PlayerDto update(Long id, PlayerCreateDto dto) {
-        Player p = playerRepository
-                .findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Joueur introuvable: " + id));
+        Player p = findPlayer(id);
         p.setLastName(dto.lastName());
         p.setFirstName(dto.firstName());
         p.setNationality(dto.nationality());
         return PlayerDto.from(playerRepository.save(p));
+    }
+
+    private Player findPlayer(Long id) {
+        return playerRepository
+                .findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Joueur introuvable: " + id));
     }
 }

@@ -36,6 +36,11 @@ public class PlayerController {
         return playerService.create(dto);
     }
 
+    @PatchMapping("/{id}/favorite")
+    public PlayerDto toggleFavorite(@PathVariable Long id) {
+        return playerService.toggleFavorite(id);
+    }
+
     @PutMapping("/{id}")
     public PlayerDto update(@PathVariable Long id, @Valid @RequestBody PlayerCreateDto dto) {
         return playerService.update(id, dto);

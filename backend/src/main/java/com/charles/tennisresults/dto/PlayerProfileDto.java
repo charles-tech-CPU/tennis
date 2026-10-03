@@ -12,7 +12,7 @@ public record PlayerProfileDto(
         Integer rankingPosition,
         Integer rankingTotal,
         int rankedPlayers,
-        PlayerRecordDto record,
+        PlayerRecordDto matchRecord,
         List<PlayerTournamentResultDto> titles,
         List<CategoryBestResultDto> bestByCategory,
         List<PlayerTournamentResultDto> tournaments) {}

@@ -143,7 +143,8 @@ a:hover { text-decoration: underline; }
   color: rgba(255, 255, 255, 0.72);
   transition: background 0.15s ease, color 0.15s ease;
 }
-.topbar nav a:hover { color: #fff; text-decoration: none; background: rgba(255, 255, 255, 0.1); }
+/* Equivalent opaque de 10 % de blanc sur --court (#173a2a) : meme rendu, contraste mesurable. */
+.topbar nav a:hover { color: #fff; text-decoration: none; background: #2e4e3f; }
 .topbar nav a.router-link-exact-active,
 .topbar nav a.router-link-active:not([href="/"]) { color: var(--court); background: var(--ball); }
 
@@ -163,7 +164,17 @@ main.full { max-width: none; padding-left: 12px; padding-right: 12px; }
 .page-header .subtitle { margin: 2px 0 0; color: var(--text-muted); font-size: 14px; }
 .page-header .actions { display: flex; gap: 8px; align-items: center; }
 
-.section-title { margin: 32px 0 12px; }
+.section-title {
+  margin: 32px 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
 
 .back-link { display: inline-block; margin-bottom: 10px; font-size: 13px; }
 
@@ -177,6 +188,10 @@ main.full { max-width: none; padding-left: 12px; padding-right: 12px; }
   padding: 8px 4px;
   margin-right: 20px;
   font-weight: 700;
+  font-family: var(--font-display);
+  font-size: 17px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 .draw-tabs .tab:hover { background: transparent; color: var(--text); }
 .draw-tabs .tab.active { color: var(--clay); border-bottom-color: var(--clay); }
@@ -262,6 +277,8 @@ label { font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
   font-size: 13px;
   color: var(--text-muted);
   margin: 0 0 18px;
+  border-left: 4px solid var(--grass);
+  line-height: 1.55;
 }
 
 .empty-state {
@@ -272,7 +289,7 @@ label { font-size: 14px; display: inline-flex; align-items: center; gap: 6px; }
   border: 1px dashed var(--border-strong);
   border-radius: var(--radius-lg);
 }
-.empty-state .icon { font-size: 28px; margin-bottom: 8px; }
+.empty-state .icon { font-size: 40px; margin-bottom: 8px; }
 
 /* ---------------------------------------------------------------------- */
 /* Tables                                                                 */
@@ -630,7 +647,9 @@ td.name-cell a { font-weight: 700; letter-spacing: 0.01em; }
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: #fff;
-  background: linear-gradient(135deg, var(--gold), #d9a93c);
+  /* Or plus fonce qu'avant (#d9a93c) : texte blanc lisible (contraste >= 4.5:1). */
+  background-color: #7a5510;
+  background-image: linear-gradient(135deg, #7a5510, #946716);
   box-shadow: 0 3px 10px rgba(169, 118, 28, 0.35);
   padding: 3px 12px;
   border-radius: 999px;
@@ -827,8 +846,15 @@ td.name-cell a { font-weight: 700; letter-spacing: 0.01em; }
   justify-content: center;
   z-index: 50;
   padding: 16px;
+  backdrop-filter: blur(3px);
 }
-.score-editor .card { width: 380px; box-shadow: var(--shadow-md); margin-bottom: 0; }
+.score-editor .card {
+  width: 380px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 0;
+  border-top: 4px solid var(--clay);
+  animation: pop-in 0.16s ease-out;
+}
 .score-editor h3 { text-transform: none; color: var(--text); font-size: 17px; margin-bottom: 12px; }
 .score-editor .matchup { color: var(--text-muted); margin-bottom: 14px; font-size: 14px; }
 .score-editor label { display: flex; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 8px; cursor: pointer; }
@@ -868,11 +894,27 @@ button.small { padding: 3px 10px; font-size: 12px; }
   box-shadow: var(--shadow-sm);
   padding: 10px 12px;
   font-weight: 400;
+  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
 }
-.tie-card:hover { background: var(--surface-alt); border-color: var(--border-strong); }
+.tie-card:hover { background: var(--surface); border-color: var(--clay); box-shadow: 0 0 0 1px var(--clay), var(--shadow-md); transform: translateY(-1px); }
 .tie-card.pending { border-style: dashed; }
-.tie-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 3px 0; }
-.tie-team { display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
+.tie-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 0;
+  font-size: 14px;
+}
+.tie-team {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
 .tie-team .placeholder { color: var(--text-faint); font-style: italic; }
 .tie-row.won { font-weight: 700; }
 .tie-row.lost { color: var(--text-muted); }
@@ -883,8 +925,9 @@ button.small { padding: 3px 10px; font-size: 12px; }
   background: var(--neutral-soft);
   border-radius: var(--radius-sm);
   padding: 1px 6px;
+  font-weight: 800;
 }
-.tie-row.won .tie-score { background: var(--grass-soft); color: var(--grass-soft-text); }
+.tie-row.won .tie-score { background: var(--grass); color: #fff; }
 .tie-meta { margin-top: 6px; font-size: 12px; color: var(--text-muted); }
 .tie-card.compact { padding: 6px 10px; box-shadow: none; }
 
@@ -896,7 +939,19 @@ button.small { padding: 3px 10px; font-size: 12px; }
   overflow-x: auto;
 }
 .ko-column { display: flex; flex-direction: column; }
-.ko-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); margin: 0 0 10px; }
+.ko-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #fff;
+  margin: 0 0 10px;
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: var(--radius-sm);
+  background: var(--court);
+  font-family: var(--font-display);
+  font-weight: 700;
+}
 .ko-ties { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 14px; }
 
 .group-grid {
@@ -1006,19 +1061,6 @@ button.small { padding: 3px 10px; font-size: 12px; }
   border-color: transparent;
 }
 .tournament-hero .actions { position: relative; z-index: 1; }
-
-.draw-tabs .tab { font-family: var(--font-display); font-size: 17px; text-transform: uppercase; letter-spacing: 0.04em; }
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: var(--font-display);
-  font-size: 22px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
 .section-title::before {
   content: '';
   width: 5px;
@@ -1077,44 +1119,20 @@ tr:nth-child(3) .rank-badge { color: #fff; background: radial-gradient(circle at
 /* ---------------------------------------------------------------------- */
 /* Coupe Davis / United Cup : finitions                                   */
 /* ---------------------------------------------------------------------- */
-.ko-title {
-  align-self: flex-start;
-  padding: 5px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--court);
-  color: #fff;
-  font-family: var(--font-display);
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-}
-.tie-card {
-  border-radius: var(--radius-md);
-  transition: box-shadow 0.15s ease, transform 0.15s ease, border-color 0.15s ease;
-}
-.tie-card:hover { background: var(--surface); border-color: var(--clay); box-shadow: 0 0 0 1px var(--clay), var(--shadow-md); transform: translateY(-1px); }
-.tie-row { padding: 5px 0; font-size: 14px; }
 .tie-row + .tie-row { border-top: 1px solid var(--border); }
-.tie-team { text-transform: uppercase; font-weight: 600; letter-spacing: 0.01em; }
 .tie-team .fi { border-radius: 2px; box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06); }
 .tie-row.won .tie-team { font-weight: 800; }
 .tie-row.lost .fi { opacity: 0.5; }
-.tie-score { font-weight: 800; }
-.tie-row.won .tie-score { background: var(--grass); color: #fff; }
 .group-card .group-title { font-family: var(--font-display); font-size: 20px; text-transform: uppercase; letter-spacing: 0.03em; }
 
 /* ---------------------------------------------------------------------- */
 /* Divers                                                                 */
 /* ---------------------------------------------------------------------- */
-.callout { border-left: 4px solid var(--grass); line-height: 1.55; }
 .filters input, .filters select { min-width: 200px; background-color: var(--surface); box-shadow: var(--shadow-sm); }
-.score-editor { backdrop-filter: blur(3px); }
-.score-editor .card { border-top: 4px solid var(--clay); animation: pop-in 0.16s ease-out; }
 @keyframes pop-in {
   from { opacity: 0; transform: translateY(6px) scale(0.98); }
   to { opacity: 1; transform: none; }
 }
-.empty-state .icon { font-size: 40px; }
 
 @media (max-width: 640px) {
   .tournament-hero { padding: 16px; }
@@ -1153,3 +1171,28 @@ tr:nth-child(3) .rank-badge { color: #fff; background: radial-gradient(circle at
 .profile-titles { display: flex; flex-wrap: wrap; gap: 10px; }
 .profile-title { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; color: var(--text); text-decoration: none; }
 .profile-title .season { color: var(--text-muted); }
+
+/* Favoris */
+.favorite-star {
+  background: none; border: none; box-shadow: none; padding: 0 4px; min-width: 0;
+  font-size: 20px; line-height: 1; color: var(--text-faint); cursor: pointer;
+}
+.favorite-star:hover:not(:disabled) { background: none; color: var(--gold-soft-text); transform: scale(1.15); }
+/* Or assez fonce pour un contraste >= 4.5:1 sur fond clair. */
+.favorite-star.active { color: #946716; }
+.favorite-star:disabled { opacity: 0.5; cursor: wait; }
+th.star-col, td.star-col { width: 36px; text-align: center; }
+.favorites-block { border-left: 4px solid #e0a800; }
+.favorites-block h3 { margin: 0 0 10px; color: var(--text); }
+.favorites-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.favorite-chip {
+  display: inline-flex; align-items: center; gap: 4px; padding: 4px 4px 4px 12px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--surface); font-weight: 600;
+}
+.favorite-chip .favorite-star { font-size: 16px; }
+.player-name { display: flex; align-items: center; gap: 8px; }
+.player-name .favorite-star { font-size: 28px; }
+
+/* Lien vers la fiche joueur depuis le classement : garde la couleur de la cellule (rouge pour les Francais). */
+.ranking-table .player-link { color: inherit; font-weight: inherit; text-decoration: none; }
+.ranking-table .player-link:hover { text-decoration: underline; }

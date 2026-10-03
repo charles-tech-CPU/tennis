@@ -3,7 +3,10 @@
 
   <div class="page-header player-hero">
     <div>
-      <h1>{{ profile ? fullName(profile.player) : '...' }}</h1>
+      <h1 class="player-name">
+        {{ profile ? fullName(profile.player) : '...' }}
+        <FavoriteStar v-if="profile" :player="profile.player" @update="p => (profile.player = p)" />
+      </h1>
       <div v-if="profile" class="hero-meta">
         <span class="hero-chip nation-cell">
           <span v-if="countryFlagIso(profile.player.nationality)" class="fi" :class="`fi-${countryFlagIso(profile.player.nationality)}`"></span>
@@ -25,19 +28,19 @@
   <template v-if="profile">
     <div class="profile-stats">
       <div class="card profile-stat">
-        <span class="value">{{ profile.record.played }}</span>
+        <span class="value">{{ profile.matchRecord.played }}</span>
         <span class="label">Matchs joués</span>
       </div>
       <div class="card profile-stat">
-        <span class="value">{{ profile.record.wins }}</span>
+        <span class="value">{{ profile.matchRecord.wins }}</span>
         <span class="label">Victoires</span>
       </div>
       <div class="card profile-stat">
-        <span class="value">{{ profile.record.losses }}</span>
+        <span class="value">{{ profile.matchRecord.losses }}</span>
         <span class="label">Défaites</span>
       </div>
       <div class="card profile-stat">
-        <span class="value">{{ profile.record.winRate == null ? '—' : Math.round(profile.record.winRate * 100) + ' %' }}</span>
+        <span class="value">{{ profile.matchRecord.winRate == null ? '—' : Math.round(profile.matchRecord.winRate * 100) + ' %' }}</span>
         <span class="label">% de victoires</span>
       </div>
       <div class="card profile-stat">
@@ -105,6 +108,7 @@
 import { ref, watch } from 'vue'
 import api from '../services/api'
 import { categoryLabel, categoryTagClass, countryFlagIso } from '../labels'
+import FavoriteStar from '../components/FavoriteStar.vue'
 
 const props = defineProps({ id: { type: String, required: true } })
 

@@ -138,9 +138,9 @@ class PlayerProfileServiceTest {
         assertThat(profile.rankingTotal()).isEqualTo(900);
         assertThat(profile.rankedPlayers()).isEqualTo(2);
 
-        assertThat(profile.record().played()).isEqualTo(6);
-        assertThat(profile.record().wins()).isEqualTo(4);
-        assertThat(profile.record().losses()).isEqualTo(2);
+        assertThat(profile.matchRecord().played()).isEqualTo(6);
+        assertThat(profile.matchRecord().wins()).isEqualTo(4);
+        assertThat(profile.matchRecord().losses()).isEqualTo(2);
 
         assertThat(profile.tournaments())
                 .extracting(r -> r.tournamentName() + " " + r.season() + " " + r.roundLabel() + " " + r.points())
@@ -183,8 +183,8 @@ class PlayerProfileServiceTest {
         PlayerProfileDto profile = service.profile(newcomer.getId());
 
         assertThat(profile.rankingPosition()).isNull();
-        assertThat(profile.record().played()).isZero();
-        assertThat(profile.record().winRate()).isNull();
+        assertThat(profile.matchRecord().played()).isZero();
+        assertThat(profile.matchRecord().winRate()).isNull();
         assertThat(profile.tournaments()).isEmpty();
     }
 

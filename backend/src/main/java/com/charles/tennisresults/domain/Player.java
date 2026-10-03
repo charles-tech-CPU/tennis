@@ -33,6 +33,10 @@ public class Player {
      */
     private Integer legacySnapshotPoints;
 
+    /** Marque comme favori (etoile) pour un acces rapide a sa fiche. */
+    @Column(nullable = false)
+    private boolean favorite = false;
+
     public Player(String lastName, String firstName, String nationality) {
         this.lastName = lastName;
         this.firstName = firstName;

@@ -31,10 +31,12 @@ class PlayerControllerTest {
         controller.create(dto);
         controller.update(1L, dto);
         controller.profile(1L);
+        controller.toggleFavorite(1L);
 
         verify(playerService).findAll();
         verify(playerService).create(dto);
         verify(playerService).update(1L, dto);
         verify(playerProfileService).profile(1L);
+        verify(playerService).toggleFavorite(1L);
     }
 }

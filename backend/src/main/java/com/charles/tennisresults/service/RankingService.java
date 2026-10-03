@@ -11,6 +11,7 @@ import com.charles.tennisresults.repository.TournamentRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -310,11 +311,9 @@ public class RankingService {
         if (othersAll.size() > 6) {
             nonCounted.addAll(othersAll.subList(6, othersAll.size()));
         }
-        for (TournamentPointsDto candidate : Arrays.asList(monteCarlo, sixth)) {
-            if (candidate != null && candidate != replacement) {
-                nonCounted.add(candidate);
-            }
-        }
+        Stream.of(monteCarlo, sixth)
+                .filter(candidate -> candidate != null && candidate != replacement)
+                .forEach(nonCounted::add);
         nonCounted.sort(Comparator.comparingInt(TournamentPointsDto::points).reversed());
 
         substituteMissingMandatorySlots(mandatorySlots, nonCounted);

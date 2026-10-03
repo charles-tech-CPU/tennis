@@ -65,4 +65,21 @@ class PlayerServiceTest {
 
         assertThatThrownBy(() -> playerService.update(1L, dto)).isInstanceOf(EntityNotFoundException.class);
     }
+
+    @Test
+    void basculerLeFavoriDUnJoueur() {
+        Player player = new Player("FILS", "Arthur", "FRANCE");
+        when(playerRepository.findById(1L)).thenReturn(Optional.of(player));
+        when(playerRepository.save(player)).thenReturn(player);
+
+        assertThat(playerService.toggleFavorite(1L).favorite()).isTrue();
+        assertThat(playerService.toggleFavorite(1L).favorite()).isFalse();
+    }
+
+    @Test
+    void basculerLeFavoriDUnJoueurInconnuLeveUneErreur() {
+        when(playerRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> playerService.toggleFavorite(1L)).isInstanceOf(EntityNotFoundException.class);
+    }
 }

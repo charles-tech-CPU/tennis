@@ -13,6 +13,9 @@ export default {
   updatePlayer(id, payload) {
     return client.put(`/players/${id}`, payload).then(r => r.data)
   },
+  togglePlayerFavorite(id) {
+    return client.patch(`/players/${id}/favorite`).then(r => r.data)
+  },
   getPlayerProfile(id) {
     return client.get(`/players/${id}/profile`).then(r => r.data)
   },

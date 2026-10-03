@@ -76,7 +76,7 @@
               :title="r.liveTournaments?.length ? `Encore en jeu : ${r.liveTournaments.map(lt => lt.tournamentName).join(', ')} (points minimum garantis)` : null"
             >{{ rank }}</td>
             <td class="sticky-col sticky-2" :class="{ 'player-fr': isFrench(r) }">
-              {{ r.lastName }} {{ r.firstName ?? '' }}
+              <router-link :to="`/players/${r.playerId}`" class="player-link">{{ r.lastName }} {{ r.firstName ?? '' }}</router-link>
             </td>
             <td class="nation-cell sticky-col sticky-3">
               <span v-if="countryFlagIso(r.nationality)" class="fi" :class="`fi-${countryFlagIso(r.nationality)}`"></span>
