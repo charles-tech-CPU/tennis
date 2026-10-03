@@ -375,6 +375,8 @@ td.name-cell a { font-weight: 700; letter-spacing: 0.01em; }
 .live-legend-item { display: inline-flex; align-items: center; gap: 3px; margin-left: 6px; font-weight: 600; }
 .live-legend-item .live-dot { margin-left: 0; }
 .scroll-top { overflow-x: auto; overflow-y: hidden; margin-bottom: 4px; }
+.pagination { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 12px; }
+.pagination-top { margin-top: 0; margin-bottom: 8px; }
 .ranking-scroll { overflow-x: auto; }
 .ranking-table { white-space: nowrap; }
 .ranking-table th, .ranking-table td { padding: 8px 10px; }

@@ -115,14 +115,27 @@ public class RankingService {
         return active;
     }
 
-    /** Contexte commun a tous les joueurs d'un meme calcul de classement. */
+    /**
+     * Contexte commun a tous les joueurs d'un meme calcul de classement. Les
+     * baremes et les matchs decides (COMPLETED/BYE) de toutes les entrees sont
+     * charges en une requete chacun puis indexes en memoire, plutot que
+     * requetes entree par entree (N+1).
+     */
     private record RankingContext(
-            Map<Long, Tournament> tournamentsById, TournamentProgress progress, Map<Long, Integer> hueByTournamentId) {
+            Map<Long, Tournament> tournamentsById,
+            TournamentProgress progress,
+            Map<Long, Integer> hueByTournamentId,
+            Map<Long, Map<Integer, Integer>> pointsByRoundByTournamentId,
+            Map<Long, List<Match>> decidedMatchesByEntryId) {
 
         /** Des qualifs comptent pour leur tournoi principal (meme tournoi pour le classement). */
         Tournament effective(Tournament t) {
-            return t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
+            return RankingService.effective(tournamentsById, t);
         }
+    }
+
+    private static Tournament effective(Map<Long, Tournament> tournamentsById, Tournament t) {
+        return t.isQualifying() ? tournamentsById.getOrDefault(t.getMainTournamentId(), t) : t;
     }
 
     /**
@@ -157,14 +170,28 @@ public class RankingService {
         List<Tournament> allMains =
                 tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, allMains);
-        RankingContext context = new RankingContext(tournamentsById, progress, progress.hueByTournamentId(allMains));
 
         Set<Long> activeTournamentIds = activeTournamentIds(allMains, progress);
 
-        Map<Player, List<Entry>> byPlayer = entryRepository.findByPlayerIsNotNull().stream()
+        List<Entry> activeEntries = entryRepository.findByPlayerIsNotNull().stream()
                 .filter(entry -> activeTournamentIds.contains(
-                        context.effective(entry.getTournament()).getId()))
-                .collect(Collectors.groupingBy(Entry::getPlayer));
+                        effective(tournamentsById, entry.getTournament()).getId()))
+                .toList();
+
+        // Tournois reellement disputes par ces entrees (qualifs comprises, pas
+        // seulement leur tournoi principal) : chaque tableau a son propre bareme.
+        Set<Long> entryTournamentIds = activeEntries.stream()
+                .map(entry -> entry.getTournament().getId())
+                .collect(Collectors.toSet());
+
+        RankingContext context = new RankingContext(
+                tournamentsById,
+                progress,
+                progress.hueByTournamentId(allMains),
+                pointsByRoundByTournamentId(entryTournamentIds),
+                decidedMatchesByEntryId(entryTournamentIds));
+
+        Map<Player, List<Entry>> byPlayer = activeEntries.stream().collect(Collectors.groupingBy(Entry::getPlayer));
 
         List<RankingRowDto> rows = new ArrayList<>();
         for (Map.Entry<Player, List<Entry>> e : byPlayer.entrySet()) {
@@ -178,13 +205,47 @@ public class RankingService {
         return rows;
     }
 
+    /** Bareme (tour -> points) de chaque tournoi, en une seule requete. */
+    private Map<Long, Map<Integer, Integer>> pointsByRoundByTournamentId(Set<Long> tournamentIds) {
+        if (tournamentIds.isEmpty()) {
+            return Map.of();
+        }
+        return tournamentRoundRepository.findByTournamentIdIn(tournamentIds).stream()
+                .collect(Collectors.groupingBy(
+                        round -> round.getTournament().getId(),
+                        Collectors.toMap(TournamentRound::getRoundOrder, TournamentRound::getPoints)));
+    }
+
+    /**
+     * Matchs decides (COMPLETED/BYE - les seuls pris en compte par
+     * {@link #pointsEarned}) de ces tournois, en une seule requete, indexes
+     * par entree (entry1 comme entry2).
+     */
+    private Map<Long, List<Match>> decidedMatchesByEntryId(Set<Long> tournamentIds) {
+        if (tournamentIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, List<Match>> byEntryId = new HashMap<>();
+        for (Match m : matchRepository.findByTournament_IdInAndStatusIn(
+                new ArrayList<>(tournamentIds), List.of(MatchStatus.COMPLETED, MatchStatus.BYE))) {
+            for (Entry side : Arrays.asList(m.getEntry1(), m.getEntry2())) {
+                if (side != null) {
+                    byEntryId
+                            .computeIfAbsent(side.getId(), k -> new ArrayList<>())
+                            .add(m);
+                }
+            }
+        }
+        return byEntryId;
+    }
+
     private PlayerResults collectResults(List<Entry> playerEntries, RankingContext context) {
         Map<Long, Integer> pointsByTournamentId = new LinkedHashMap<>();
         Map<Long, Tournament> tournamentById = new HashMap<>();
         Map<Long, LiveTournamentDto> liveByTournamentId = new LinkedHashMap<>();
 
         for (Entry entry : playerEntries) {
-            EntryOutcome outcome = pointsEarned(entry);
+            EntryOutcome outcome = pointsEarned(entry, context);
             Tournament effective = context.effective(entry.getTournament());
 
             if (outcome.points() > 0) {
@@ -321,11 +382,10 @@ public class RankingService {
      * dernier tour gagne (le tour suivant, pas encore joue, reste incertain
      * mais ne peut plus lui faire perdre ce qu'il a deja gagne).
      */
-    private EntryOutcome pointsEarned(Entry entry) {
+    private EntryOutcome pointsEarned(Entry entry, RankingContext context) {
         Tournament tournament = entry.getTournament();
         Map<Integer, Integer> pointsByRound =
-                tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(tournament.getId()).stream()
-                        .collect(Collectors.toMap(TournamentRound::getRoundOrder, TournamentRound::getPoints));
+                context.pointsByRoundByTournamentId().getOrDefault(tournament.getId(), Map.of());
 
         // Un tableau de qualifications n'a pas de "finale" unique : plusieurs
         // groupes independants produisent chacun un qualifie au dernier tour
@@ -336,7 +396,7 @@ public class RankingService {
             return new EntryOutcome(0, false);
         }
 
-        List<Match> matches = matchRepository.findByEntry1_IdOrEntry2_Id(entry.getId(), entry.getId());
+        List<Match> matches = context.decidedMatchesByEntryId().getOrDefault(entry.getId(), List.of());
 
         Match deepest = matches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.COMPLETED || m.getStatus() == MatchStatus.BYE)

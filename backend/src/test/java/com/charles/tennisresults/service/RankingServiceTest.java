@@ -1,8 +1,8 @@
 package com.charles.tennisresults.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyList;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.lenient;
 
 import com.charles.tennisresults.domain.Entry;
@@ -20,6 +20,7 @@ import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -74,13 +75,13 @@ class RankingServiceTest {
         lenient().when(tournamentRepository.findAll()).thenReturn(tournaments);
         lenient().when(entryRepository.findByPlayerIsNotNull()).thenReturn(entries);
         lenient()
-                .when(tournamentRoundRepository.findByTournamentIdOrderByRoundOrderAsc(anyLong()))
-                .thenAnswer(inv -> roundsByTournamentId.getOrDefault(inv.<Long>getArgument(0), List.of()));
-        lenient()
-                .when(matchRepository.findByEntry1_IdOrEntry2_Id(anyLong(), anyLong()))
-                .thenAnswer(inv -> matches.stream()
-                        .filter(m -> involves(m, inv.getArgument(0)))
-                        .toList());
+                .when(tournamentRoundRepository.findByTournamentIdIn(anyCollection()))
+                .thenAnswer(inv -> {
+                    Collection<Long> ids = inv.getArgument(0);
+                    return ids.stream()
+                            .flatMap(id -> roundsByTournamentId.getOrDefault(id, List.of()).stream())
+                            .toList();
+                });
         lenient()
                 .when(matchRepository.findByTournament_IdInAndStatusIn(anyList(), anyList()))
                 .thenAnswer(inv -> {
@@ -335,11 +336,6 @@ class RankingServiceTest {
         player.setId(nextId++);
         player.setLastName(lastName);
         return player;
-    }
-
-    private static boolean involves(Match match, Long entryId) {
-        return (match.getEntry1() != null && match.getEntry1().getId().equals(entryId))
-                || (match.getEntry2() != null && match.getEntry2().getId().equals(entryId));
     }
 
     private static RankingRowDto row(List<RankingRowDto> ranking, String lastName) {
