@@ -27,8 +27,8 @@
             </td>
           </template>
           <template v-else>
-            <td>{{ p.lastName }}</td>
-            <td>{{ p.firstName ?? '—' }}</td>
+            <td class="name-cell"><router-link :to="`/players/${p.id}`">{{ p.lastName }}</router-link></td>
+            <td><router-link :to="`/players/${p.id}`">{{ p.firstName ?? '—' }}</router-link></td>
             <td class="nation-cell">
               <span v-if="countryFlagIso(p.nationality)" class="fi" :class="`fi-${countryFlagIso(p.nationality)}`"></span>
               {{ p.nationality ?? '—' }}

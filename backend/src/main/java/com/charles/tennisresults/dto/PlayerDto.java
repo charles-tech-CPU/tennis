@@ -1,3 +1,11 @@
 package com.charles.tennisresults.dto;
 
-public record PlayerDto(Long id, String lastName, String firstName, String nationality, Integer legacySnapshotPoints) {}
+import com.charles.tennisresults.domain.Player;
+
+public record PlayerDto(Long id, String lastName, String firstName, String nationality, Integer legacySnapshotPoints) {
+
+    public static PlayerDto from(Player p) {
+        return new PlayerDto(
+                p.getId(), p.getLastName(), p.getFirstName(), p.getNationality(), p.getLegacySnapshotPoints());
+    }
+}

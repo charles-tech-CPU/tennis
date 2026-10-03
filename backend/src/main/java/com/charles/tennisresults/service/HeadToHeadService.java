@@ -70,7 +70,8 @@ public class HeadToHeadService {
 
         int player1Wins = (int)
                 dtos.stream().filter(m -> player1Id.equals(m.winnerPlayerId())).count();
-        return new HeadToHeadDto(toDto(player1), toDto(player2), player1Wins, dtos.size() - player1Wins, dtos);
+        return new HeadToHeadDto(
+                PlayerDto.from(player1), PlayerDto.from(player2), player1Wins, dtos.size() - player1Wins, dtos);
     }
 
     private Player findPlayer(Long id) {
@@ -96,7 +97,7 @@ public class HeadToHeadService {
         Tournament t = m.getTournament();
         String label = labelsByTournamentId
                 .getOrDefault(t.getId(), Map.of())
-                .getOrDefault(m.getRoundOrder(), fallbackLabel(t, m.getRoundOrder()));
+                .getOrDefault(m.getRoundOrder(), RoundLabels.labelFor(t, m.getRoundOrder()));
         return new HeadToHeadMatchDto(
                 m.getId(),
                 t.getId(),
@@ -107,21 +108,5 @@ public class HeadToHeadService {
                 label,
                 m.getScore(),
                 m.getWinnerEntry().getPlayer().getId());
-    }
-
-    /** Libelle deduit de la taille du tableau, si le bareme du tournoi n'en fournit pas. */
-    private static String fallbackLabel(Tournament t, int roundOrder) {
-        if (t.isQualifying()) {
-            return RoundLabels.qualifyingLabelFor(roundOrder);
-        }
-        if (t.getDrawSize() == null) {
-            return null;
-        }
-        return RoundLabels.labelFor(roundOrder, RoundLabels.roundCount(RoundLabels.nextPowerOfTwo(t.getDrawSize())));
-    }
-
-    private static PlayerDto toDto(Player p) {
-        return new PlayerDto(
-                p.getId(), p.getLastName(), p.getFirstName(), p.getNationality(), p.getLegacySnapshotPoints());
     }
 }

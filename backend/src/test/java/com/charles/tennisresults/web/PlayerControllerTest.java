@@ -3,6 +3,7 @@ package com.charles.tennisresults.web;
 import static org.mockito.Mockito.verify;
 
 import com.charles.tennisresults.dto.PlayerCreateDto;
+import com.charles.tennisresults.service.PlayerProfileService;
 import com.charles.tennisresults.service.PlayerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +17,9 @@ class PlayerControllerTest {
     @Mock
     private PlayerService playerService;
 
+    @Mock
+    private PlayerProfileService playerProfileService;
+
     @InjectMocks
     private PlayerController controller;
 
@@ -26,9 +30,11 @@ class PlayerControllerTest {
         controller.findAll();
         controller.create(dto);
         controller.update(1L, dto);
+        controller.profile(1L);
 
         verify(playerService).findAll();
         verify(playerService).create(dto);
         verify(playerService).update(1L, dto);
+        verify(playerProfileService).profile(1L);
     }
 }

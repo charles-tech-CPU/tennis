@@ -1142,3 +1142,14 @@ tr:nth-child(3) .rank-badge { color: #fff; background: radial-gradient(circle at
 .h2h-suggestions button:hover { background: var(--border); }
 .h2h-none { padding: 6px 8px; color: var(--text-muted); }
 .h2h-summary { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 18px; margin-bottom: 18px; }
+
+/* Fiche joueur */
+.player-hero .hero-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.player-hero .hero-chip { background: var(--surface); border-color: var(--border); color: var(--text); backdrop-filter: none; }
+.profile-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.profile-stat { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 0; text-align: center; }
+.profile-stat .value { font-size: 30px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.profile-stat .label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.profile-titles { display: flex; flex-wrap: wrap; gap: 10px; }
+.profile-title { display: flex; align-items: center; gap: 8px; margin: 0; padding: 10px 14px; color: var(--text); text-decoration: none; }
+.profile-title .season { color: var(--text-muted); }

@@ -1,5 +1,7 @@
 package com.charles.tennisresults.service;
 
+import com.charles.tennisresults.domain.Tournament;
+
 public final class RoundLabels {
 
     private RoundLabels() {}
@@ -36,5 +38,20 @@ public final class RoundLabels {
     /** Libelle d'un tour de qualification (roundOrder 1-based) : "Q1", "Q2"... */
     public static String qualifyingLabelFor(int roundOrder) {
         return "Q" + roundOrder;
+    }
+
+    /**
+     * Libelle du tour roundOrder deduit du tableau (qualifs ou taille du
+     * tableau principal), quand le bareme du tournoi n'en fournit pas ; null
+     * si la taille du tableau est inconnue.
+     */
+    public static String labelFor(Tournament t, int roundOrder) {
+        if (t.isQualifying()) {
+            return qualifyingLabelFor(roundOrder);
+        }
+        if (t.getDrawSize() == null) {
+            return null;
+        }
+        return labelFor(roundOrder, roundCount(nextPowerOfTwo(t.getDrawSize())));
     }
 }

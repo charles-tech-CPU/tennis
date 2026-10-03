@@ -20,14 +20,14 @@ public class PlayerService {
 
     public List<PlayerDto> findAll() {
         return playerRepository.findAll().stream()
-                .map(this::toDto)
+                .map(PlayerDto::from)
                 .sorted(Comparator.comparing(PlayerDto::lastName))
                 .toList();
     }
 
     public PlayerDto create(PlayerCreateDto dto) {
         Player p = new Player(dto.lastName(), dto.firstName(), dto.nationality());
-        return toDto(playerRepository.save(p));
+        return PlayerDto.from(playerRepository.save(p));
     }
 
     public PlayerDto update(Long id, PlayerCreateDto dto) {
@@ -37,11 +37,6 @@ public class PlayerService {
         p.setLastName(dto.lastName());
         p.setFirstName(dto.firstName());
         p.setNationality(dto.nationality());
-        return toDto(playerRepository.save(p));
-    }
-
-    private PlayerDto toDto(Player p) {
-        return new PlayerDto(
-                p.getId(), p.getLastName(), p.getFirstName(), p.getNationality(), p.getLegacySnapshotPoints());
+        return PlayerDto.from(playerRepository.save(p));
     }
 }

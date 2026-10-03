@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import TournamentsView from '../views/TournamentsView.vue'
 import TournamentDetailView from '../views/TournamentDetailView.vue'
 import PlayersView from '../views/PlayersView.vue'
+import PlayerDetailView from '../views/PlayerDetailView.vue'
 import RankingView from '../views/RankingView.vue'
 import StatsView from '../views/StatsView.vue'
 import HeadToHeadView from '../views/HeadToHeadView.vue'
@@ -11,6 +12,7 @@ const routes = [
   { path: '/', component: TournamentsView },
   { path: '/tournaments/:id', component: TournamentDetailView, props: true, meta: { wide: true } },
   { path: '/players', component: PlayersView },
+  { path: '/players/:id', component: PlayerDetailView, props: true, meta: { wide: true } },
   { path: '/ranking', component: RankingView, meta: { full: true } },
   { path: '/head-to-head', component: HeadToHeadView },
   { path: '/stats', component: StatsView, meta: { wide: true } },

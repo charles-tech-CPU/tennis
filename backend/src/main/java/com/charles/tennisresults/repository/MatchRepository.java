@@ -2,6 +2,7 @@ package com.charles.tennisresults.repository;
 
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -20,6 +21,15 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
     List<Match> findByTournament_IdInAndStatusIn(List<Long> tournamentIds, List<MatchStatus> statuses);
 
     void deleteByTournamentId(Long tournamentId);
+
+    /** Matchs de ces entrees (cote entry1 ou entry2) ayant l'un de ces statuts. */
+    @Query("""
+            select m from Match m
+            where m.status in :statuses
+              and (m.entry1.id in :entryIds or m.entry2.id in :entryIds)
+            """)
+    List<Match> findByEntryIdsAndStatusIn(
+            @Param("entryIds") Collection<Long> entryIds, @Param("statuses") List<MatchStatus> statuses);
 
     /** Matchs decides (avec un vainqueur) ayant oppose ces deux joueurs, dans un sens ou dans l'autre. */
     @Query("""

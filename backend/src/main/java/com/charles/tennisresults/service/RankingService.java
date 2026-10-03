@@ -374,6 +374,27 @@ public class RankingService {
         }
     }
 
+    /** Resultat de cette entree d'apres le contexte du classement (voir {@link #outcome}). */
+    private EntryOutcome pointsEarned(Entry entry, RankingContext context) {
+        return outcome(
+                entry,
+                context.pointsByRoundByTournamentId()
+                        .getOrDefault(entry.getTournament().getId(), Map.of()),
+                context.decidedMatchesByEntryId().getOrDefault(entry.getId(), List.of()));
+    }
+
+    /**
+     * Points gagnes par une entree, exactement comme dans le classement (voir
+     * {@link #outcome}) - expose pour la fiche joueur, qui charge elle-meme
+     * bareme et matchs plutot que de recalculer tout le classement.
+     *
+     * @param pointsByRound bareme du tournoi de l'entree (tour -> points)
+     * @param decidedMatches matchs COMPLETED/BYE de cette entree
+     */
+    public int pointsEarned(Entry entry, Map<Integer, Integer> pointsByRound, List<Match> decidedMatches) {
+        return outcome(entry, pointsByRound, decidedMatches).points();
+    }
+
     /**
      * Resultat (points + encore en jeu ou non) de cette entree, uniquement
      * d'apres des matchs decides - jamais de resultat devine. "Encore en jeu"
@@ -382,10 +403,8 @@ public class RankingService {
      * dernier tour gagne (le tour suivant, pas encore joue, reste incertain
      * mais ne peut plus lui faire perdre ce qu'il a deja gagne).
      */
-    private EntryOutcome pointsEarned(Entry entry, RankingContext context) {
+    private EntryOutcome outcome(Entry entry, Map<Integer, Integer> pointsByRound, List<Match> matches) {
         Tournament tournament = entry.getTournament();
-        Map<Integer, Integer> pointsByRound =
-                context.pointsByRoundByTournamentId().getOrDefault(tournament.getId(), Map.of());
 
         // Un tableau de qualifications n'a pas de "finale" unique : plusieurs
         // groupes independants produisent chacun un qualifie au dernier tour
@@ -395,8 +414,6 @@ public class RankingService {
         if (totalRounds == 0) {
             return new EntryOutcome(0, false);
         }
-
-        List<Match> matches = context.decidedMatchesByEntryId().getOrDefault(entry.getId(), List.of());
 
         Match deepest = matches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.COMPLETED || m.getStatus() == MatchStatus.BYE)
@@ -438,7 +455,7 @@ public class RankingService {
         }
     }
 
-    private static int totalRounds(Tournament tournament, Map<Integer, Integer> pointsByRound) {
+    static int totalRounds(Tournament tournament, Map<Integer, Integer> pointsByRound) {
         if (tournament.isQualifying()) {
             return pointsByRound.size();
         }
