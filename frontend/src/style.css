@@ -1123,3 +1123,22 @@ tr:nth-child(3) .rank-badge { color: #fff; background: radial-gradient(circle at
 }
 .nowrap { white-space: nowrap; }
 .ranking-table td.total-col strong { font-family: var(--font-display); font-size: 17px; font-weight: 800; color: var(--clay-soft-text); }
+
+/* Face a face */
+.h2h-pickers { align-items: flex-start; }
+.h2h-picker { position: relative; min-width: 260px; }
+.h2h-picker input { width: 100%; }
+.h2h-selected { display: flex; align-items: center; gap: 8px; min-height: 38px; }
+.h2h-suggestions {
+  position: absolute; z-index: 10; top: 100%; left: 0; right: 0;
+  margin: 4px 0 0; padding: 4px; list-style: none;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px; box-shadow: var(--shadow-sm);
+  max-height: 320px; overflow-y: auto;
+}
+.h2h-suggestions button {
+  display: flex; align-items: center; gap: 6px; width: 100%; text-align: left;
+  background: none; color: var(--text); border: none; box-shadow: none; padding: 6px 8px; font-weight: 500;
+}
+.h2h-suggestions button:hover { background: var(--border); }
+.h2h-none { padding: 6px 8px; color: var(--text-muted); }
+.h2h-summary { display: flex; justify-content: center; align-items: center; gap: 16px; flex-wrap: wrap; font-size: 18px; margin-bottom: 18px; }

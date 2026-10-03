@@ -8,6 +8,7 @@
       <router-link to="/">Tournois</router-link>
       <router-link to="/ranking">Classement</router-link>
       <router-link to="/players">Joueurs</router-link>
+      <router-link to="/head-to-head">Face à face</router-link>
       <router-link to="/stats">Stats</router-link>
       <router-link to="/coupe-davis">Coupe Davis</router-link>
       <router-link to="/united-cup">United Cup</router-link>

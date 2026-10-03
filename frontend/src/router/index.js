@@ -4,6 +4,7 @@ import TournamentDetailView from '../views/TournamentDetailView.vue'
 import PlayersView from '../views/PlayersView.vue'
 import RankingView from '../views/RankingView.vue'
 import StatsView from '../views/StatsView.vue'
+import HeadToHeadView from '../views/HeadToHeadView.vue'
 import TeamCompetitionView from '../views/TeamCompetitionView.vue'
 
 const routes = [
@@ -11,6 +12,7 @@ const routes = [
   { path: '/tournaments/:id', component: TournamentDetailView, props: true, meta: { wide: true } },
   { path: '/players', component: PlayersView },
   { path: '/ranking', component: RankingView, meta: { full: true } },
+  { path: '/head-to-head', component: HeadToHeadView },
   { path: '/stats', component: StatsView, meta: { wide: true } },
   { path: '/coupe-davis', component: TeamCompetitionView, props: { competition: 'DAVIS_CUP' }, meta: { wide: true } },
   { path: '/united-cup', component: TeamCompetitionView, props: { competition: 'UNITED_CUP' }, meta: { wide: true } }

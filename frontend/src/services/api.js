@@ -58,6 +58,11 @@ export default {
     return client.get('/ranking').then(r => r.data)
   },
 
+  // Face a face
+  getHeadToHead(player1Id, player2Id) {
+    return client.get('/head-to-head', { params: { player1Id, player2Id } }).then(r => r.data)
+  },
+
   // Stats
   getStats(season) {
     return client.get('/stats', { params: { season } }).then(r => r.data)
