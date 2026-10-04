@@ -22,11 +22,18 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     void deleteByTournamentId(Long tournamentId);
 
-    /** Matchs de ces entrees (cote entry1 ou entry2) ayant l'un de ces statuts. */
+    /**
+     * Matchs de ces entrees (cote entry1 ou entry2) ayant l'un de ces statuts,
+     * avec les deux entrees et leurs joueurs (adversaires de la fiche joueur).
+     */
     @Query("""
             select m from Match m
+            left join fetch m.entry1 e1
+            left join fetch e1.player
+            left join fetch m.entry2 e2
+            left join fetch e2.player
             where m.status in :statuses
-              and (m.entry1.id in :entryIds or m.entry2.id in :entryIds)
+              and (e1.id in :entryIds or e2.id in :entryIds)
             """)
     List<Match> findByEntryIdsAndStatusIn(
             @Param("entryIds") Collection<Long> entryIds, @Param("statuses") List<MatchStatus> statuses);

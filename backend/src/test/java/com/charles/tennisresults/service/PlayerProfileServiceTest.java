@@ -126,6 +126,9 @@ class PlayerProfileServiceTest {
         Tournament madridQ = tournament("MADRID", 2027, 17, TournamentCategory.MASTERS_1000, 8, 0, 20);
         madridQ.setQualifying(true);
         madridQ.setMainTournamentId(madrid.getId());
+        rounds.stream()
+                .filter(r -> r.getTournament() == madridQ)
+                .forEach(r -> r.setRoundLabel(RoundLabels.qualifyingLabelFor(r.getRoundOrder())));
         Entry aq = entry(madridQ, alcaraz);
         played(madridQ, 1, aq, entry(madridQ, sinner), MatchStatus.COMPLETED);
         played(madridQ, 2, aq, entry(madridQ, sinner), MatchStatus.COMPLETED);
@@ -146,6 +149,16 @@ class PlayerProfileServiceTest {
                 .extracting(r -> r.tournamentName() + " " + r.season() + " " + r.roundLabel() + " " + r.points())
                 .containsExactly("MADRID 2027 SF 30", "WIMBLEDON 2026 SF 50", "DOHA 2026 F 250");
         assertThat(profile.tournaments().get(0).viaQualifying()).isTrue();
+
+        // Detail par tour, du plus recent au plus ancien : tableau principal puis qualifs.
+        assertThat(profile.tournaments().get(0).matches())
+                .extracting(m ->
+                        m.roundLabel() + " " + (m.bye() ? "BYE" : m.opponent().lastName()) + " " + m.won())
+                .containsExactly("SF SINNER false", "Q2 SINNER true", "Q1 SINNER true");
+        assertThat(profile.tournaments().get(1).matches())
+                .extracting(m ->
+                        m.roundLabel() + " " + (m.bye() ? "BYE" : m.opponent().lastName()) + " " + m.won())
+                .containsExactly("SF SINNER false", "QF BYE true");
 
         assertThat(profile.titles())
                 .extracting(PlayerTournamentResultDto::tournamentName)

@@ -9,6 +9,7 @@ import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.domain.TournamentRound;
 import com.charles.tennisresults.dto.CategoryBestResultDto;
 import com.charles.tennisresults.dto.PlayerDto;
+import com.charles.tennisresults.dto.PlayerMatchDto;
 import com.charles.tennisresults.dto.PlayerProfileDto;
 import com.charles.tennisresults.dto.PlayerRecordDto;
 import com.charles.tennisresults.dto.PlayerTournamentResultDto;
@@ -76,7 +77,8 @@ public class PlayerProfileService {
     }
 
     /** Parcours d'une entree (un tableau : principal OU qualifs). */
-    private record Run(Entry entry, int reachedRound, boolean won, boolean inProgress, int points) {
+    private record Run(
+            Entry entry, int reachedRound, boolean won, boolean inProgress, int points, List<Match> matches) {
 
         Tournament tournament() {
             return entry.getTournament();
@@ -200,18 +202,18 @@ public class PlayerProfileService {
                 .max(Comparator.comparingInt(Match::getRoundOrder))
                 .orElse(null);
         if (deepest == null) {
-            return new Run(entry, 1, false, true, points);
+            return new Run(entry, 1, false, true, points, matches);
         }
         boolean wonDeepest = deepest.getWinnerEntry() != null
                 && deepest.getWinnerEntry().getId().equals(entry.getId());
         int r = deepest.getRoundOrder();
         if (!wonDeepest) {
-            return new Run(entry, r, false, false, points);
+            return new Run(entry, r, false, false, points, matches);
         }
         if (totalRounds > 0 && r >= totalRounds) {
-            return new Run(entry, r, true, false, points); // champion (ou qualifie)
+            return new Run(entry, r, true, false, points, matches); // champion (ou qualifie)
         }
-        return new Run(entry, r + 1, false, true, points);
+        return new Run(entry, r + 1, false, true, points, matches);
     }
 
     /**
@@ -232,6 +234,7 @@ public class PlayerProfileService {
         return new PlayerTournamentResultDto(
                 main.getId(),
                 main.getName(),
+                main.getCountry(),
                 main.getSeason(),
                 main.getWeekNumber(),
                 main.getCategory(),
@@ -239,7 +242,44 @@ public class PlayerProfileService {
                 mainRun.map(Run::won).orElse(false),
                 shown.inProgress(),
                 viaQualifying,
-                runs.stream().mapToInt(Run::points).sum());
+                runs.stream().mapToInt(Run::points).sum(),
+                matchesOf(runs, labels));
+    }
+
+    /**
+     * Matchs decides du tournoi, du plus recent au plus ancien : tableau
+     * principal (joue apres) puis qualifs, tour le plus avance d'abord.
+     */
+    private static List<PlayerMatchDto> matchesOf(List<Run> runs, Map<Long, Map<Integer, String>> labels) {
+        return runs.stream()
+                .sorted(Comparator.comparing(r -> r.tournament().isQualifying()))
+                .flatMap(r -> r.matches().stream()
+                        .sorted(Comparator.comparing(Match::getRoundOrder, Comparator.reverseOrder()))
+                        .map(m -> matchDto(r.entry(), m, labels)))
+                .toList();
+    }
+
+    private static PlayerMatchDto matchDto(Entry self, Match m, Map<Long, Map<Integer, String>> labels) {
+        Tournament t = self.getTournament();
+        Entry opponent =
+                self.getId().equals(m.getEntry1() == null ? null : m.getEntry1().getId())
+                        ? m.getEntry2()
+                        : m.getEntry1();
+        Player opponentPlayer = opponent == null ? null : opponent.getPlayer();
+        boolean bye = m.getStatus() == MatchStatus.BYE || opponentPlayer == null;
+        String label = labels.getOrDefault(t.getId(), Map.of())
+                .getOrDefault(m.getRoundOrder(), RoundLabels.labelFor(t, m.getRoundOrder()));
+        return new PlayerMatchDto(
+                m.getId(),
+                t.isQualifying(),
+                m.getRoundOrder(),
+                label,
+                bye,
+                bye ? null : PlayerDto.from(opponentPlayer),
+                bye ? null : opponent.getSeed(),
+                bye ? null : opponent.getEntryType(),
+                bye ? null : m.getScore(),
+                m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(self.getId()));
     }
 
     /**

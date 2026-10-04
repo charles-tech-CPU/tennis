@@ -79,27 +79,53 @@
     <p v-else class="field-hint">Aucun tournoi disputé.</p>
 
     <h2 class="section-title">Historique des tournois</h2>
-    <div v-if="profile.tournaments.length" class="table-card">
-      <table>
-        <thead>
-          <tr><th>Saison</th><th>Semaine</th><th>Tournoi</th><th>Catégorie</th><th>Tour atteint</th><th class="num">Points</th></tr>
-        </thead>
-        <tbody>
-          <tr v-for="t in profile.tournaments" :key="t.tournamentId">
-            <td>{{ t.season }}</td>
-            <td class="week-cell">{{ t.week ?? '—' }}</td>
-            <td class="name-cell"><router-link :to="`/tournaments/${t.tournamentId}`">{{ t.tournamentName }}</router-link></td>
-            <td><span class="tag" :class="categoryTagClass(t.category)">{{ categoryLabel(t.category) }}</span></td>
-            <td>
-              {{ resultLabel(t) }}
-              <span v-if="t.viaQualifying" class="tag tag-neutral" title="Passé par les qualifications">Q</span>
-              <span v-if="t.inProgress" class="tag tag-grass">en cours</span>
-            </td>
-            <td class="num">{{ t.points }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+    <template v-if="profile.tournaments.length">
+      <div v-for="t in profile.tournaments" :key="t.tournamentId" class="table-card activity-block">
+        <div class="activity-header">
+          <div class="activity-title">
+            <router-link :to="`/tournaments/${t.tournamentId}`" class="activity-name">{{ t.tournamentName }}</router-link>
+            <span class="tag" :class="categoryTagClass(t.category)">{{ categoryLabel(t.category) }}</span>
+            <span v-if="t.champion" class="tag tag-gold">Vainqueur 🏆</span>
+            <span v-if="t.viaQualifying" class="tag tag-neutral" title="Passé par les qualifications">Issu des qualifs</span>
+            <span v-if="t.inProgress" class="tag tag-grass">en cours</span>
+          </div>
+          <div class="activity-meta">
+            <span v-if="t.country" class="nation-cell">
+              <span v-if="countryFlagIso(t.country)" class="fi" :class="`fi-${countryFlagIso(t.country)}`"></span>{{ t.country }}
+            </span>
+            <span>{{ t.week != null ? `Semaine ${t.week} · ` : '' }}{{ t.season }}</span>
+            <span>Résultat : <strong>{{ resultLabel(t) }}</strong></span>
+          </div>
+        </div>
+        <table v-if="t.matches.length" class="activity-table">
+          <thead>
+            <tr><th class="round-col">Tour</th><th>Adversaire</th><th>Score</th><th class="result-col">V/D</th></tr>
+          </thead>
+          <tbody>
+            <tr v-for="m in t.matches" :key="m.matchId">
+              <td class="round-col" :title="roundTitle(m.roundLabel)">{{ m.roundLabel ?? '—' }}</td>
+              <td v-if="m.bye" class="bye-cell">Exempté (bye)</td>
+              <td v-else class="nation-cell">
+                <span v-if="countryFlagIso(m.opponent.nationality)" class="fi" :class="`fi-${countryFlagIso(m.opponent.nationality)}`" :title="m.opponent.nationality"></span>
+                <router-link :to="`/players/${m.opponent.id}`">{{ fullName(m.opponent) }}</router-link>
+                <span v-if="opponentTag(m)" class="seed">{{ opponentTag(m) }}</span>
+              </td>
+              <td class="score-cell">{{ m.bye ? '—' : (m.score || '—') }}</td>
+              <td class="result-col">
+                <span v-if="m.bye" class="result-mark result-bye" title="Bye">–</span>
+                <span v-else-if="m.won" class="result-mark result-win" title="Victoire" aria-label="Victoire">✓</span>
+                <span v-else class="result-mark result-loss" title="Défaite" aria-label="Défaite">✗</span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-else class="activity-empty">Aucun match décidé pour l'instant.</p>
+        <div class="activity-footer">
+          Points de classement gagnés : <strong>{{ t.points }}</strong>
+          <span v-if="t.inProgress" class="field-hint-inline">(minimum garanti, tournoi en cours)</span>
+        </div>
+      </div>
+    </template>
     <p v-else class="field-hint">Aucun tournoi disputé.</p>
   </template>
 </template>
@@ -107,7 +133,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import api from '../services/api'
-import { categoryLabel, categoryTagClass, countryFlagIso } from '../labels'
+import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel } from '../labels'
 import FavoriteStar from '../components/FavoriteStar.vue'
 
 const props = defineProps({ id: { type: String, required: true } })
@@ -135,6 +161,18 @@ function resultLabel(result) {
   if (!label) return '—'
   if (/^Q\d+$/.test(label)) return `Qualifications (${label})`
   return ROUND_NAMES[label] ?? label
+}
+
+function roundTitle(label) {
+  if (!label) return ''
+  if (/^Q\d+$/.test(label)) return `Qualifications, ${label.slice(1)}e tour`
+  return ROUND_NAMES[label] ?? label
+}
+
+// Comme sur le site ATP : "(3)" pour une tete de serie, "(WC)", "(Q)"... pour un statut d'entree.
+function opponentTag(m) {
+  const parts = [m.opponentSeed, entryTypeShortLabel(m.opponentEntryType)].filter(Boolean)
+  return parts.length ? `(${parts.join(' ')})` : ''
 }
 
 async function load() {

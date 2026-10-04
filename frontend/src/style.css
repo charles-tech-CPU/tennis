@@ -1196,3 +1196,26 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 /* Lien vers la fiche joueur depuis le classement : garde la couleur de la cellule (rouge pour les Francais). */
 .ranking-table .player-link { color: inherit; font-weight: inherit; text-decoration: none; }
 .ranking-table .player-link:hover { text-decoration: underline; }
+
+/* Fiche joueur : historique groupe par tournoi (facon "Player Activity" ATP). */
+.activity-block { margin-bottom: 16px; }
+.activity-header { padding: 14px 16px; background: var(--surface-alt); border-bottom: 1px solid var(--border); }
+.activity-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.activity-name { font-family: var(--font-display); font-size: 20px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.01em; }
+.activity-meta { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 6px; font-size: 13px; color: var(--text-muted); }
+.activity-table th.round-col, .activity-table td.round-col { width: 64px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.activity-table th.result-col, .activity-table td.result-col { width: 48px; text-align: center; }
+.activity-table td.score-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.activity-table td.bye-cell { color: var(--text-muted); font-style: italic; }
+.activity-table .seed { margin-left: 6px; color: var(--text-muted); font-size: 12px; font-weight: 600; }
+.result-mark { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; font-size: 13px; font-weight: 800; }
+.result-win { background: var(--grass-soft); color: var(--grass); }
+.result-loss { background: var(--danger-soft); color: var(--danger); }
+.result-bye { color: var(--text-faint); }
+.activity-empty { margin: 0; padding: 12px 16px; color: var(--text-muted); font-size: 13px; }
+.activity-footer { padding: 10px 16px; font-size: 13px; color: var(--text-muted); text-align: right; }
+.activity-footer strong { color: var(--text); font-variant-numeric: tabular-nums; }
+.field-hint-inline { margin-left: 6px; font-size: 12px; color: var(--text-faint); }
+@media (max-width: 600px) {
+  .activity-table th, .activity-table td { padding: 9px 10px; }
+}
