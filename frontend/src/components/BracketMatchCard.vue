@@ -18,6 +18,7 @@
         {{ slotLabel(match?.entry1) }}
       </span>
       <span class="badges">
+        <span v-if="match?.entry1?.rankingAtEntry" class="slot-rank" :title="`Classement au début du tournoi : ${match.entry1.rankingAtEntry}`">#{{ match.entry1.rankingAtEntry }}</span>
         <span v-if="match?.entry1?.seed" class="tag tag-seed">{{ match.entry1.seed }}</span>
         <span v-if="match?.entry1?.entryType" class="tag">{{ entryTypeShortLabel(match.entry1.entryType) }}</span>
       </span>
@@ -30,6 +31,7 @@
         {{ slotLabel(match?.entry2) }}
       </span>
       <span class="badges">
+        <span v-if="match?.entry2?.rankingAtEntry" class="slot-rank" :title="`Classement au début du tournoi : ${match.entry2.rankingAtEntry}`">#{{ match.entry2.rankingAtEntry }}</span>
         <span v-if="match?.entry2?.seed" class="tag tag-seed">{{ match.entry2.seed }}</span>
         <span v-if="match?.entry2?.entryType" class="tag">{{ entryTypeShortLabel(match.entry2.entryType) }}</span>
       </span>

@@ -1,6 +1,7 @@
 package com.charles.tennisresults.dto;
 
 import com.charles.tennisresults.domain.MandatorySlot;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.TournamentCategory;
 import java.util.List;
 
@@ -11,6 +12,8 @@ public record TournamentDto(
         Integer season,
         Integer weekNumber,
         String country,
+        Surface surface,
+        Boolean indoor,
         MandatorySlot mandatorySlot,
         Integer drawSize,
         Integer drawSlots,

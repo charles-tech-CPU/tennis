@@ -104,6 +104,8 @@
               <span v-if="countryFlagIso(t.country)" class="fi" :class="`fi-${countryFlagIso(t.country)}`"></span>{{ t.country }}
             </span>
             <span>{{ t.week != null ? `Semaine ${t.week} · ` : '' }}{{ t.season }}</span>
+            <span v-if="surfaceLabel(t.surface, t.indoor)">{{ surfaceLabel(t.surface, t.indoor) }}</span>
+            <span v-if="t.rankingAtEntry" title="Classement figé au début du tournoi">Classement : <strong>N° {{ t.rankingAtEntry }}</strong></span>
             <span>Résultat : <strong>{{ resultLabel(t) }}</strong></span>
           </div>
         </div>
@@ -119,6 +121,7 @@
                 <span v-if="countryFlagIso(m.opponent.nationality)" class="fi" :class="`fi-${countryFlagIso(m.opponent.nationality)}`" :title="m.opponent.nationality"></span>
                 <router-link :to="`/players/${m.opponent.id}`">{{ fullName(m.opponent) }}</router-link>
                 <span v-if="opponentTag(m)" class="seed">{{ opponentTag(m) }}</span>
+                <span v-if="m.opponentRanking" class="opp-rank" title="Classement de l'adversaire au début du tournoi">#{{ m.opponentRanking }}</span>
               </td>
               <td class="score-cell">{{ m.bye ? '—' : (m.score || '—') }}</td>
               <td class="result-col">
@@ -143,7 +146,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import api from '../services/api'
-import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel } from '../labels'
+import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel, surfaceLabel } from '../labels'
 import FavoriteStar from '../components/FavoriteStar.vue'
 
 const props = defineProps({ id: { type: String, required: true } })

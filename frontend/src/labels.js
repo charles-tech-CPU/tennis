@@ -150,3 +150,32 @@ export function formatMatchScore(raw) {
     .map(set => /^\d{2}$/.test(set) ? `${set[0]}-${set[1]}` : set)
     .join(' ')
 }
+
+export const SURFACES = ['HARD', 'CLAY', 'GRASS', 'CARPET']
+
+export const SURFACE_LABELS = {
+  HARD: 'Dur',
+  CLAY: 'Terre battue',
+  GRASS: 'Gazon',
+  CARPET: 'Moquette'
+}
+
+export const SURFACE_TAG_CLASS = {
+  HARD: 'tag-blue',
+  CLAY: 'tag-clay',
+  GRASS: 'tag-grass',
+  CARPET: 'tag-purple'
+}
+
+export function surfaceTagClass(surface) {
+  return SURFACE_TAG_CLASS[surface] ?? 'tag-neutral'
+}
+
+/** "Terre battue · Outdoor", "Indoor" (surface inconnue), ou '' si rien n'est renseigne. */
+export function surfaceLabel(surface, indoor) {
+  const parts = []
+  if (surface) parts.push(SURFACE_LABELS[surface] ?? surface)
+  if (indoor === true) parts.push('Indoor')
+  if (indoor === false) parts.push('Outdoor')
+  return parts.join(' · ')
+}

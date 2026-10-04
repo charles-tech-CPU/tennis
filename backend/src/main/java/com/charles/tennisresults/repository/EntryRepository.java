@@ -9,6 +9,8 @@ public interface EntryRepository extends JpaRepository<Entry, Long> {
 
     List<Entry> findByPlayerId(Long playerId);
 
+    List<Entry> findByTournamentId(Long tournamentId);
+
     List<Entry> findByTournamentIdAndPlayerId(Long tournamentId, Long playerId);
 
     List<Entry> findByPlayerIsNotNull();

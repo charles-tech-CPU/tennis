@@ -273,10 +273,22 @@ class TournamentServiceTest {
 
     private static TournamentCreateDto create(int drawSize, List<RoundPointsDto> rounds) {
         return new TournamentCreateDto(
-                "DOHA", TournamentCategory.ATP_250, 2026, 7, "QATAR", null, drawSize, null, null, null, rounds);
+                "DOHA",
+                TournamentCategory.ATP_250,
+                2026,
+                7,
+                "QATAR",
+                null,
+                null,
+                null,
+                drawSize,
+                null,
+                null,
+                null,
+                rounds);
     }
 
     private static TournamentUpdateDto update(int week, List<RoundPointsDto> rounds, Integer drawSize) {
-        return new TournamentUpdateDto(null, week, null, null, null, null, null, rounds, drawSize);
+        return new TournamentUpdateDto(null, week, null, null, null, null, null, null, null, rounds, drawSize);
     }
 }

@@ -31,6 +31,7 @@
           <th>Nom</th>
           <th>Catégorie</th>
           <th>Pays</th>
+          <th>Surface</th>
           <th>Saison</th>
           <th>Tableau</th>
           <th>Vainqueur</th>
@@ -47,6 +48,11 @@
           <td class="nation-cell">
             <span v-if="countryFlagIso(t.country)" class="fi" :class="`fi-${countryFlagIso(t.country)}`"></span>
             {{ t.country ?? '—' }}
+          </td>
+          <td class="nowrap">
+            <span v-if="t.surface" class="tag" :class="surfaceTagClass(t.surface)">{{ SURFACE_LABELS[t.surface] }}</span>
+            <span v-if="t.indoor != null" class="surface-io">{{ t.indoor ? 'Indoor' : 'Outdoor' }}</span>
+            <span v-if="!t.surface && t.indoor == null">—</span>
           </td>
           <td>{{ t.season }}</td>
           <td class="nowrap">{{ t.drawSize }} ({{ t.drawSlots }} cases)</td>
@@ -84,6 +90,15 @@
         <option value="">Pays non renseigné</option>
         <option v-for="c in countryNames" :key="c" :value="c">{{ c }}</option>
       </select>
+      <select v-model="form.surface" aria-label="Surface">
+        <option value="">Surface non renseignée</option>
+        <option v-for="s in surfaces" :key="s" :value="s">{{ SURFACE_LABELS[s] }}</option>
+      </select>
+      <select v-model="form.indoor" aria-label="Indoor ou outdoor">
+        <option :value="null">Indoor / outdoor non renseigné</option>
+        <option :value="false">Outdoor</option>
+        <option :value="true">Indoor</option>
+      </select>
     </div>
     <div class="inline" style="margin-top:8px">
       <input v-model.number="form.drawSize" aria-label="Taille réelle du tableau" type="number" min="2" placeholder="Taille réelle du tableau (ex: 32, 96...)" required />
@@ -104,9 +119,10 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
 import api from '../services/api'
-import { categoryLabel, categoryTagClass, mandatorySlotLabel, countryFlagIso, COUNTRY_NAMES, hslColor } from '../labels'
+import { categoryLabel, categoryTagClass, mandatorySlotLabel, countryFlagIso, COUNTRY_NAMES, hslColor, SURFACES, SURFACE_LABELS, surfaceTagClass } from '../labels'
 
 const countryNames = COUNTRY_NAMES
+const surfaces = SURFACES
 
 const tournaments = ref([])
 const loaded = ref(false)
@@ -121,7 +137,7 @@ const mandatorySlots = ['AUSTRALIAN_OPEN', 'ROLAND_GARROS', 'WIMBLEDON', 'US_OPE
 
 const form = reactive({
   name: '', category: '', season: new Date().getFullYear(), weekNumber: null,
-  country: '', drawSize: 32, mandatorySlot: '', runnerUpPoints: null
+  country: '', surface: '', indoor: null, drawSize: 32, mandatorySlot: '', runnerUpPoints: null
 })
 
 const seasons = computed(() => [...new Set(tournaments.value.map(t => t.season))].sort((a, b) => b - a))
@@ -158,6 +174,8 @@ async function submit() {
       season: form.season,
       weekNumber: form.weekNumber || null,
       country: form.country || null,
+      surface: form.surface || null,
+      indoor: form.indoor,
       drawSize: form.drawSize,
       mandatorySlot: form.mandatorySlot || null,
       runnerUpPoints: form.runnerUpPoints || null,
@@ -168,6 +186,8 @@ async function submit() {
     form.name = ''
     form.weekNumber = null
     form.country = ''
+    form.surface = ''
+    form.indoor = null
     form.mandatorySlot = ''
     form.runnerUpPoints = null
     await load()

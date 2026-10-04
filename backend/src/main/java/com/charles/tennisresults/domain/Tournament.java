@@ -34,6 +34,20 @@ public class Tournament {
 
     private String country;
 
+    /** Surface de jeu, null si non renseignee. */
+    @Enumerated(EnumType.STRING)
+    private Surface surface;
+
+    /** true = indoor, false = outdoor, null si non renseigne. */
+    private Boolean indoor;
+
+    /**
+     * True une fois le classement de chaque joueur du tableau fige
+     * (Entry.rankingAtEntry), au premier match saisi - voir EntryRankingService.
+     */
+    @Column(nullable = false)
+    private boolean rankingsFrozen = false;
+
     /**
      * Case "obligatoire" du classement que ce tournoi occupe pour cette saison
      * (uniquement pertinent pour GRAND_SLAM et MASTERS_1000). Null si le tournoi

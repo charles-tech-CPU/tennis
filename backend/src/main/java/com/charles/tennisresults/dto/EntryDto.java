@@ -14,7 +14,8 @@ public record EntryDto(
         Integer drawPosition,
         Integer seed,
         EntryType entryType,
-        boolean bye) {
+        boolean bye,
+        Integer rankingAtEntry) {
 
     /** null pour une case vide ; une entree sans joueur est un bye (nom affiche "BYE") ou une case a remplir. */
     public static EntryDto from(Entry e) {
@@ -33,7 +34,8 @@ public record EntryDto(
                     e.getDrawPosition(),
                     e.getSeed(),
                     e.getEntryType(),
-                    e.isBye());
+                    e.isBye(),
+                    null);
         }
         return new EntryDto(
                 e.getId(),
@@ -45,6 +47,7 @@ public record EntryDto(
                 e.getDrawPosition(),
                 e.getSeed(),
                 e.getEntryType(),
-                e.isBye());
+                e.isBye(),
+                e.getRankingAtEntry());
     }
 }

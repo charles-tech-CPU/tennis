@@ -2,6 +2,7 @@ package com.charles.tennisresults.web;
 
 import static org.mockito.Mockito.verify;
 
+import com.charles.tennisresults.service.EntryRankingService;
 import com.charles.tennisresults.service.RankingService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +16,9 @@ class RankingControllerTest {
     @Mock
     private RankingService rankingService;
 
+    @Mock
+    private EntryRankingService entryRankingService;
+
     @InjectMocks
     private RankingController controller;
 
@@ -23,5 +27,12 @@ class RankingControllerTest {
         controller.ranking();
 
         verify(rankingService).computeRanking();
+    }
+
+    @Test
+    void leRattrapageDesClassementsEstDelegueAuService() {
+        controller.backfillEntryRankings();
+
+        verify(entryRankingService).backfillFrozenTournaments();
     }
 }

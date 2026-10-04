@@ -225,6 +225,18 @@ class RankingServiceTest {
     }
 
     @Test
+    void leClassementAvantUneSemaineIgnoreLesTournoisDeCetteSemaineEtDesSuivantes() {
+        win(alcaraz, tournament("DOHA", 2026, 7, null, 2, 250));
+        win(alcaraz, tournament("DUBAI", 2026, 8, null, 2, 500));
+        win(alcaraz, tournament("ACAPULCO", 2026, 9, null, 2, 500));
+
+        assertThat(totalOf(rankingService.computeRankingBefore(2026, 8), "ALCARAZ"))
+                .isEqualTo(250);
+        assertThat(totalOf(rankingService.computeRankingBefore(2026, 10), "ALCARAZ"))
+                .isEqualTo(1250);
+    }
+
+    @Test
     void deuxTournoisDuMemeNomADesSemainesDifferentesComptentTousLesDeux() {
         win(alcaraz, tournament("NOTTINGHAM", 2026, 1, null, 2, 50));
         win(alcaraz, tournament("NOTTINGHAM", 2026, 25, null, 2, 125));

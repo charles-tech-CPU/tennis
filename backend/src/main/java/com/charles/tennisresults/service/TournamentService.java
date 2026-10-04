@@ -86,6 +86,8 @@ public class TournamentService {
         t.setSeason(dto.season());
         t.setWeekNumber(dto.weekNumber());
         t.setCountry(dto.country());
+        t.setSurface(dto.surface());
+        t.setIndoor(dto.indoor());
         t.setMandatorySlot(dto.mandatorySlot());
         t.setDrawSize(dto.drawSize());
         t.setQualifyingRound1Points(dto.qualifyingRound1Points());
@@ -118,6 +120,13 @@ public class TournamentService {
         }
         t.setWeekNumber(dto.weekNumber());
         t.setCountry(dto.country());
+        t.setSurface(dto.surface());
+        t.setIndoor(dto.indoor());
+        // Meme evenement, meme surface : les qualifs suivent le tableau principal.
+        tournamentRepository.findByMainTournamentId(t.getId()).ifPresent(q -> {
+            q.setSurface(dto.surface());
+            q.setIndoor(dto.indoor());
+        });
         t.setMandatorySlot(dto.mandatorySlot());
         t.setQualifyingRound1Points(dto.qualifyingRound1Points());
         t.setQualifyingRound2Points(dto.qualifyingRound2Points());
@@ -205,6 +214,8 @@ public class TournamentService {
         q.setSeason(main.getSeason());
         q.setWeekNumber(computeQualifyingWeekNumber(main));
         q.setCountry(main.getCountry());
+        q.setSurface(main.getSurface());
+        q.setIndoor(main.getIndoor());
         q.setDrawSize(dto.drawSize());
         q.setQualifying(true);
         q.setMainTournamentId(mainTournamentId);
@@ -298,6 +309,8 @@ public class TournamentService {
                 t.getSeason(),
                 t.getWeekNumber(),
                 t.getCountry(),
+                t.getSurface(),
+                t.getIndoor(),
                 t.getMandatorySlot(),
                 t.getDrawSize(),
                 drawSlots,

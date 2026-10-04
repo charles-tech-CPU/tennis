@@ -21,14 +21,17 @@ public class MatchService {
     private final MatchRepository matchRepository;
     private final TournamentRoundRepository tournamentRoundRepository;
     private final BracketService bracketService;
+    private final EntryRankingService entryRankingService;
 
     public MatchService(
             MatchRepository matchRepository,
             TournamentRoundRepository tournamentRoundRepository,
-            BracketService bracketService) {
+            BracketService bracketService,
+            EntryRankingService entryRankingService) {
         this.matchRepository = matchRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.bracketService = bracketService;
+        this.entryRankingService = entryRankingService;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +62,9 @@ public class MatchService {
         } else {
             throw new IllegalArgumentException("Le vainqueur doit etre l'un des deux joueurs du match.");
         }
+
+        // Premier resultat du tournoi : on fige d'abord le classement des joueurs du tableau.
+        entryRankingService.freezeIfNeeded(match.getTournament());
 
         boolean wasAlreadyCompleted = match.getStatus() == MatchStatus.COMPLETED;
         if (wasAlreadyCompleted) {

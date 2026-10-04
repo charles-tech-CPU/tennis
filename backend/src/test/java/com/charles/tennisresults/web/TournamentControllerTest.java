@@ -25,8 +25,9 @@ class TournamentControllerTest {
     @Test
     void chaqueRouteDelegueAuService() {
         TournamentCreateDto create =
-                new TournamentCreateDto("DOHA", null, 2026, 7, null, null, 32, null, null, null, null);
-        TournamentUpdateDto update = new TournamentUpdateDto(null, 8, null, null, null, null, null, null, null);
+                new TournamentCreateDto("DOHA", null, 2026, 7, null, null, null, null, 32, null, null, null, null);
+        TournamentUpdateDto update =
+                new TournamentUpdateDto(null, 8, null, null, null, null, null, null, null, null, null);
         QualifyingCreateDto qualifying = new QualifyingCreateDto(16, List.of());
 
         controller.findAll();

@@ -235,6 +235,8 @@ public class PlayerProfileService {
                 main.getId(),
                 main.getName(),
                 main.getCountry(),
+                main.getSurface(),
+                main.getIndoor(),
                 main.getSeason(),
                 main.getWeekNumber(),
                 main.getCategory(),
@@ -242,8 +244,22 @@ public class PlayerProfileService {
                 mainRun.map(Run::won).orElse(false),
                 shown.inProgress(),
                 viaQualifying,
+                rankingAtEntry(runs),
                 runs.stream().mapToInt(Run::points).sum(),
                 matchesOf(runs, labels));
+    }
+
+    /**
+     * Classement fige a l'entree dans le tournoi : celui des qualifs si le
+     * joueur en est sorti (premier tableau dispute), sinon du tableau principal.
+     */
+    private static Integer rankingAtEntry(List<Run> runs) {
+        return runs.stream()
+                .sorted(Comparator.comparing(r -> !r.tournament().isQualifying()))
+                .map(r -> r.entry().getRankingAtEntry())
+                .filter(Objects::nonNull)
+                .findFirst()
+                .orElse(null);
     }
 
     /**
@@ -278,6 +294,7 @@ public class PlayerProfileService {
                 bye ? null : PlayerDto.from(opponentPlayer),
                 bye ? null : opponent.getSeed(),
                 bye ? null : opponent.getEntryType(),
+                bye ? null : opponent.getRankingAtEntry(),
                 bye ? null : m.getScore(),
                 m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(self.getId()));
     }

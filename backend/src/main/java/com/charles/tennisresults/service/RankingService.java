@@ -10,6 +10,7 @@ import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.TournamentRepository;
 import com.charles.tennisresults.repository.TournamentRoundRepository;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
@@ -165,11 +166,32 @@ public class RankingService {
 
     @Transactional(readOnly = true)
     public List<RankingRowDto> computeRanking() {
+        return computeRanking(t -> true);
+    }
+
+    /**
+     * Classement tel qu'il etait au debut de la semaine `week` de la saison
+     * `season` (comme le classement ATP du lundi) : seuls comptent les
+     * tournois (et leurs qualifs) des semaines precedentes - ceux de cette
+     * semaine-la et des suivantes sont ignores. Un tournoi sans numero de
+     * semaine est ignore (impossible de le situer).
+     */
+    @Transactional(readOnly = true)
+    public List<RankingRowDto> computeRankingBefore(int season, int week) {
+        return computeRanking(t -> t.getSeason() != null
+                && t.getWeekNumber() != null
+                && (t.getSeason() < season || (t.getSeason() == season && t.getWeekNumber() < week)));
+    }
+
+    /** Classement calcule uniquement a partir des tournois principaux retenus par ce filtre (et de leurs qualifs). */
+    private List<RankingRowDto> computeRanking(Predicate<Tournament> mainFilter) {
         Map<Long, Tournament> tournamentsById =
                 tournamentRepository.findAll().stream().collect(Collectors.toMap(Tournament::getId, t -> t));
 
-        List<Tournament> allMains =
-                tournamentsById.values().stream().filter(t -> !t.isQualifying()).toList();
+        List<Tournament> allMains = tournamentsById.values().stream()
+                .filter(t -> !t.isQualifying())
+                .filter(mainFilter)
+                .toList();
         TournamentProgress progress = TournamentProgress.compute(tournamentRepository, matchRepository, allMains);
 
         Set<Long> activeTournamentIds = activeTournamentIds(allMains, progress);

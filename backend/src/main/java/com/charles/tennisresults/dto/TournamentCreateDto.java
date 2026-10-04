@@ -1,6 +1,7 @@
 package com.charles.tennisresults.dto;
 
 import com.charles.tennisresults.domain.MandatorySlot;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.TournamentCategory;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -18,6 +19,8 @@ public record TournamentCreateDto(
         @NotNull Integer season,
         Integer weekNumber,
         String country,
+        Surface surface,
+        Boolean indoor,
         MandatorySlot mandatorySlot,
         @NotNull Integer drawSize,
         Integer qualifyingRound1Points,

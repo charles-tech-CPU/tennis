@@ -39,6 +39,13 @@ public class Entry {
     @Enumerated(EnumType.STRING)
     private EntryType entryType;
 
+    /**
+     * Classement du joueur au demarrage du tournoi (fige au premier match saisi,
+     * voir EntryRankingService). Null si non classe a ce moment-la ou si le
+     * tournoi a demarre avant l'existence de ce champ.
+     */
+    private Integer rankingAtEntry;
+
     /** true si cette position est un "bye" (pas de joueur, avance automatiquement). */
     @Column(nullable = false)
     private boolean bye = false;

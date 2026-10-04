@@ -13,6 +13,7 @@
           <span v-if="countryFlagIso(tournament.country)" class="fi" :class="`fi-${countryFlagIso(tournament.country)}`"></span>
           {{ tournament.country ?? 'Pays non renseigné' }}
         </span>
+        <span v-if="surfaceLabel(tournament.surface, tournament.indoor)" class="hero-chip">{{ surfaceLabel(tournament.surface, tournament.indoor) }}</span>
         <span class="hero-chip">Saison {{ tournament.season }}</span>
         <span v-if="tournament.weekNumber" class="hero-chip">Semaine {{ tournament.weekNumber }}</span>
         <span class="hero-chip">Tableau {{ tournament.drawSize }} ({{ tournament.drawSlots }} cases)</span>
@@ -37,6 +38,15 @@
       <select v-model="editForm.country" aria-label="Pays">
         <option value="">Pays non renseigné</option>
         <option v-for="c in countryNames" :key="c" :value="c">{{ c }}</option>
+      </select>
+      <select v-model="editForm.surface" aria-label="Surface">
+        <option value="">Surface non renseignée</option>
+        <option v-for="s in surfaces" :key="s" :value="s">{{ SURFACE_LABELS[s] }}</option>
+      </select>
+      <select v-model="editForm.indoor" aria-label="Indoor ou outdoor">
+        <option :value="null">Indoor / outdoor non renseigné</option>
+        <option :value="false">Outdoor</option>
+        <option :value="true">Indoor</option>
       </select>
       <select v-model="editForm.mandatorySlot" aria-label="Case obligatoire">
         <option value="">Pas une case obligatoire</option>
@@ -169,9 +179,10 @@
 import { onMounted, reactive, ref, watch } from 'vue'
 import api from '../services/api'
 import BracketView from '../components/BracketView.vue'
-import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, countryFlagIso, COUNTRY_NAMES } from '../labels'
+import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, countryFlagIso, COUNTRY_NAMES, SURFACES, SURFACE_LABELS, surfaceLabel } from '../labels'
 
 const countryNames = COUNTRY_NAMES
+const surfaces = SURFACES
 
 const props = defineProps({ id: { type: [String, Number], required: true } })
 
@@ -198,7 +209,7 @@ const categories = ['GRAND_SLAM', 'MASTERS_1000', 'ATP_500', 'ATP_250', 'ATP_175
 const editing = ref(false)
 const editError = ref('')
 const editForm = reactive({
-  category: '', weekNumber: null, country: '', mandatorySlot: '',
+  category: '', weekNumber: null, country: '', surface: '', indoor: null, mandatorySlot: '',
   qualifyingRound1Points: null, qualifyingRound2Points: null, runnerUpPoints: null,
   rounds: [], drawSize: null
 })
@@ -260,6 +271,8 @@ function toggleEdit() {
     editForm.category = tournament.value.category
     editForm.weekNumber = tournament.value.weekNumber
     editForm.country = tournament.value.country ?? ''
+    editForm.surface = tournament.value.surface ?? ''
+    editForm.indoor = tournament.value.indoor ?? null
     editForm.mandatorySlot = tournament.value.mandatorySlot ?? ''
     editForm.qualifyingRound1Points = tournament.value.qualifyingRound1Points
     editForm.qualifyingRound2Points = tournament.value.qualifyingRound2Points
@@ -283,6 +296,8 @@ async function saveEdit() {
       category: editForm.category,
       weekNumber: editForm.weekNumber || null,
       country: editForm.country || null,
+      surface: editForm.surface || null,
+      indoor: editForm.indoor,
       mandatorySlot: editForm.mandatorySlot || null,
       qualifyingRound1Points: editForm.qualifyingRound1Points,
       qualifyingRound2Points: editForm.qualifyingRound2Points,

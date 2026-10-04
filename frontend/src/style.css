@@ -1220,3 +1220,9 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
   .activity-table th, .activity-table td { padding: 9px 10px; }
 }
 .season-summary { margin: 10px 0 14px; font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* Classement fige au debut du tournoi : discret, derriere seed / statut d'entree. */
+.bracket-slot .slot-rank { align-self: center; font-size: 10px; font-weight: 600; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+.bracket-slot.winner .slot-rank { color: var(--text-muted); }
+.surface-io { margin-left: 4px; font-size: 12px; color: var(--text-muted); }
+.activity-table .opp-rank { margin-left: 6px; color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }

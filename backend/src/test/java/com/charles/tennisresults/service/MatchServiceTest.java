@@ -39,6 +39,9 @@ class MatchServiceTest {
     @Mock
     private BracketService bracketService;
 
+    @Mock
+    private EntryRankingService entryRankingService;
+
     @InjectMocks
     private MatchService matchService;
 
@@ -90,6 +93,17 @@ class MatchServiceTest {
         assertThat(dto.winnerEntryId()).isEqualTo(200L);
         verify(bracketService, never()).resetDownstream(match);
         verify(bracketService).advanceWinner(match, sinner);
+    }
+
+    @Test
+    void leClassementDuTableauEstFigeAvantDEnregistrerLeResultat() {
+        Match match = givenMatch(match(alcaraz, sinner, MatchStatus.SCHEDULED));
+
+        matchService.recordScore(MATCH_ID, new ScoreUpdateDto("6-3 6-3", 200L));
+
+        InOrder order = inOrder(entryRankingService, matchRepository);
+        order.verify(entryRankingService).freezeIfNeeded(tournament);
+        order.verify(matchRepository).save(match);
     }
 
     @Test
