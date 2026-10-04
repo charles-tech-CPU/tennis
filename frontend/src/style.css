@@ -1219,3 +1219,4 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 @media (max-width: 600px) {
   .activity-table th, .activity-table td { padding: 9px 10px; }
 }
+.season-summary { margin: 10px 0 14px; font-size: 13px; color: var(--text-muted); font-variant-numeric: tabular-nums; }

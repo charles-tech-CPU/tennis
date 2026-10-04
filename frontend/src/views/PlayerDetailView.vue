@@ -80,7 +80,17 @@
 
     <h2 class="section-title">Historique des tournois</h2>
     <template v-if="profile.tournaments.length">
-      <div v-for="t in profile.tournaments" :key="t.tournamentId" class="table-card activity-block">
+      <div class="draw-tabs">
+        <button v-for="s in seasons" :key="s" class="tab" :class="{ active: s === selectedSeason }" @click="selectedSeason = s">
+          {{ s ?? 'Saison inconnue' }}
+        </button>
+      </div>
+      <p class="season-summary">
+        {{ seasonSummary.tournaments }} tournoi{{ seasonSummary.tournaments > 1 ? 's' : '' }}
+        · {{ seasonSummary.wins }} V – {{ seasonSummary.losses }} D
+        · {{ seasonSummary.points }} pts gagnés
+      </p>
+      <div v-for="t in seasonTournaments" :key="t.tournamentId" class="table-card activity-block">
         <div class="activity-header">
           <div class="activity-title">
             <router-link :to="`/tournaments/${t.tournamentId}`" class="activity-name">{{ t.tournamentName }}</router-link>
@@ -131,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import api from '../services/api'
 import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel } from '../labels'
 import FavoriteStar from '../components/FavoriteStar.vue'
@@ -140,6 +150,25 @@ const props = defineProps({ id: { type: String, required: true } })
 
 const profile = ref(null)
 const error = ref('')
+const selectedSeason = ref(null)
+
+// Saisons jouees, la plus recente d'abord (tournaments est deja trie ainsi par le backend).
+const seasons = computed(() => [...new Set((profile.value?.tournaments ?? []).map(t => t.season))])
+
+const seasonTournaments = computed(() =>
+  (profile.value?.tournaments ?? []).filter(t => t.season === selectedSeason.value))
+
+// Bilan de la saison affichee : les byes ne comptent pas comme des matchs joues.
+const seasonSummary = computed(() => {
+  const played = seasonTournaments.value.flatMap(t => t.matches).filter(m => !m.bye)
+  const wins = played.filter(m => m.won).length
+  return {
+    tournaments: seasonTournaments.value.length,
+    wins,
+    losses: played.length - wins,
+    points: seasonTournaments.value.reduce((sum, t) => sum + t.points, 0)
+  }
+})
 
 const ROUND_NAMES = {
   F: 'Finale',
@@ -180,6 +209,7 @@ async function load() {
   error.value = ''
   try {
     profile.value = await api.getPlayerProfile(props.id)
+    selectedSeason.value = seasons.value[0] ?? null
   } catch (e) {
     error.value = e.response?.status === 404 ? 'Joueur introuvable.' : 'Impossible de charger la fiche du joueur.'
   }
