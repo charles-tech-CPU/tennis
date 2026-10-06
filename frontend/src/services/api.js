@@ -1,6 +1,17 @@
 import axios from 'axios'
 
-const client = axios.create({ baseURL: `http://${window.location.hostname}:8082/api` })
+// Ports du backend : HTTP en LAN (http://<ip>), HTTPS via Tailscale
+// (https://serveur-foyer.tail0af124.ts.net).
+const PORT_BACKEND_HTTP = 8082
+const PORT_BACKEND_HTTPS = 8382
+
+// L'API suit le protocole de la page : une page HTTPS qui appelle une API HTTP est
+// bloquee par le navigateur ("contenu mixte").
+const API_ORIGIN = window.location.protocol === 'https:'
+  ? `https://${window.location.hostname}:${PORT_BACKEND_HTTPS}`
+  : `http://${window.location.hostname}:${PORT_BACKEND_HTTP}`
+
+const client = axios.create({ baseURL: `${API_ORIGIN}/api` })
 
 export default {
   // Joueurs
