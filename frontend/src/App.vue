@@ -1,5 +1,6 @@
 <template>
   <header class="topbar">
+    <a :href="PORTAL_URL" class="portal-link" title="Retour au portail du foyer">← Portail</a>
     <div class="brand">
       <span class="brand-mark">🎾</span>
       <h1>Tennis <span>Results</span></h1>
@@ -20,6 +21,7 @@
 </template>
 
 <script setup>
+import { PORTAL_URL } from './portal'
 import { useRoute } from 'vue-router'
 const route = useRoute()
 </script>

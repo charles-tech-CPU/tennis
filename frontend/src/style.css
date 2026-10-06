@@ -1226,3 +1226,28 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 .bracket-slot.winner .slot-rank { color: var(--text-muted); }
 .surface-io { margin-left: 4px; font-size: 12px; color: var(--text-muted); }
 .activity-table .opp-rank { margin-left: 6px; color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+
+/* Lien de retour au portail-foyer, tout a gauche de l'en-tete : discret mais visible */
+.portal-link {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 6px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.72);
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.portal-link:hover {
+  color: #fff;
+  background: #2e4e3f;
+  text-decoration: none;
+}
+.topbar .portal-link {
+  margin-right: 10px;
+}
