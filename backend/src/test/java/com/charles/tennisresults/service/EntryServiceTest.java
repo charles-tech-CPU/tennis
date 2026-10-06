@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.charles.tennisresults.domain.Entry;
 import com.charles.tennisresults.domain.Player;
 import com.charles.tennisresults.domain.Tournament;
+import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.dto.EntryCreateDto;
 import com.charles.tennisresults.dto.EntryDto;
 import com.charles.tennisresults.repository.EntryRepository;
@@ -101,8 +102,24 @@ class EntryServiceTest {
     }
 
     @Test
-    void lesMasters1000ExemptesNeDeclenchentPasDeConflit() {
-        givenAlreadyEnteredIn(tournament(2L, "Miami", 7));
+    void unMasters1000DejaInscritNeDeclenchePasDeConflit() {
+        Tournament miami = tournament(2L, "Miami", 7);
+        miami.setCategory(TournamentCategory.MASTERS_1000);
+        givenAlreadyEnteredIn(miami);
+
+        EntryDto dto = entryService.create(1L, new EntryCreateDto(50L, 3, null, null, false));
+
+        assertThat(dto.playerId()).isEqualTo(50L);
+    }
+
+    @Test
+    void sInscrireAUnMasters1000NeDeclenchePasDeConflit() {
+        doha.setName("SHANGHAI - QUALIFS");
+        doha.setCategory(TournamentCategory.MASTERS_1000);
+        Entry tokyo = new Entry();
+        tokyo.setTournament(tournament(2L, "TOKYO", 7));
+        tokyo.setPlayer(alcaraz);
+        lenient().when(entryRepository.findByPlayerId(50L)).thenReturn(List.of(tokyo));
 
         EntryDto dto = entryService.create(1L, new EntryCreateDto(50L, 3, null, null, false));
 

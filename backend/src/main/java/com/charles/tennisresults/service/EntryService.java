@@ -3,6 +3,7 @@ package com.charles.tennisresults.service;
 import com.charles.tennisresults.domain.Entry;
 import com.charles.tennisresults.domain.Player;
 import com.charles.tennisresults.domain.Tournament;
+import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.dto.EntryCreateDto;
 import com.charles.tennisresults.dto.EntryDto;
 import com.charles.tennisresults.repository.EntryRepository;
@@ -12,7 +13,6 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -112,6 +112,12 @@ public class EntryService {
      * Canada et Cincinnati ajoutes a la liste (Charles, 2026-09-23) : leurs
      * qualifs commencent en debut de semaine, un joueur peut donc legitimement
      * y figurer tout en etant inscrit a un autre tournoi de la meme semaine.
+     *
+     * Generalise a tous les Masters 1000 (Charles, 2026-10-06) : Shanghai
+     * bloquait a son tour (conflit avec Tokyo a cause des qualifs la semaine
+     * d'avant) - on exempte desormais toute la categorie MASTERS_1000
+     * (tableau principal et qualifs, qui heritent de la categorie) plutot
+     * qu'une liste de noms.
      */
     private void checkSameWeekConflict(Tournament tournament, Player player) {
         if (tournament.getWeekNumber() == null) {
@@ -141,16 +147,7 @@ public class EntryService {
         }
     }
 
-    private static final Set<String> WEEK_CONFLICT_EXEMPT_NAMES = Set.of(
-            "MIAMI", "MIAMI - QUALIFS",
-            "INDIAN WELLS", "INDIAN WELLS - QUALIFS",
-            "MADRID", "MADRID - QUALIFS",
-            "ROME", "ROME - QUALIFS",
-            "CANADA", "CANADA - QUALIFS",
-            "CINCINNATI", "CINCINNATI - QUALIFS");
-
     private static boolean isExemptFromWeekConflict(Tournament t) {
-        return t.getName() != null
-                && WEEK_CONFLICT_EXEMPT_NAMES.contains(t.getName().toUpperCase());
+        return t.getCategory() == TournamentCategory.MASTERS_1000;
     }
 }
