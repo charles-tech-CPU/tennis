@@ -211,6 +211,18 @@ class TournamentServiceTest {
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
+    // --- doublons ---
+
+    @Test
+    void impossibleDeCreerDeuxFoisLeMemeTournoiLaMemeSemaine() {
+        when(tournamentRepository.existsByNameIgnoreCaseAndSeasonAndWeekNumber("DOHA", 2026, 7))
+                .thenReturn(true);
+        TournamentCreateDto dto = create(32, null);
+
+        assertThatThrownBy(() -> tournamentService.create(dto)).isInstanceOf(IllegalArgumentException.class);
+        verify(tournamentRepository, never()).save(any());
+    }
+
     // --- suppression ---
 
     @Test

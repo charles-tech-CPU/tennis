@@ -80,8 +80,19 @@ public class TournamentService {
 
     @Transactional
     public TournamentDto create(TournamentCreateDto dto) {
+        // Garde-fou contre les doublons (Charles, 2026-10-10 : plusieurs clics
+        // sur le bouton de creation pendant l'envoi ont cree le meme tournoi en
+        // plusieurs exemplaires). Meme nom + meme saison + meme semaine : le
+        // nom seul ne suffit pas, certains Challengers reviennent plusieurs
+        // semaines de suite dans la meme ville.
+        String name = dto.name().trim();
+        if (tournamentRepository.existsByNameIgnoreCaseAndSeasonAndWeekNumber(name, dto.season(), dto.weekNumber())) {
+            throw new IllegalArgumentException("Un tournoi \"" + name + "\" existe deja pour la saison " + dto.season()
+                    + (dto.weekNumber() != null ? ", semaine " + dto.weekNumber() : " (sans semaine)") + ".");
+        }
+
         Tournament t = new Tournament();
-        t.setName(dto.name());
+        t.setName(name);
         t.setCategory(dto.category());
         t.setSeason(dto.season());
         t.setWeekNumber(dto.weekNumber());

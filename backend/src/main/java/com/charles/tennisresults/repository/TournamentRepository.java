@@ -12,4 +12,7 @@ public interface TournamentRepository extends JpaRepository<Tournament, Long> {
     Optional<Tournament> findBySeasonAndMandatorySlot(Integer season, MandatorySlot mandatorySlot);
 
     Optional<Tournament> findByMainTournamentId(Long mainTournamentId);
+
+    /** weekNumber null = "IS NULL" (requete derivee Spring Data). */
+    boolean existsByNameIgnoreCaseAndSeasonAndWeekNumber(String name, Integer season, Integer weekNumber);
 }

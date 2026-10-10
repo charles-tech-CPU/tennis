@@ -111,7 +111,9 @@
     <p class="field-hint">
       Le barème de points par tour est pré-rempli automatiquement selon la catégorie (modifiable ensuite sur la page du tournoi).
     </p>
-    <button type="submit" style="margin-top:8px">Créer le tournoi</button>
+    <button type="submit" style="margin-top:8px" :disabled="saving" :aria-busy="saving">
+      <span v-if="saving" class="spinner" aria-hidden="true"></span>{{ saving ? 'Enregistrement...' : 'Créer le tournoi' }}
+    </button>
     <p v-if="error" class="form-error">{{ error }}</p>
   </form>
 </template>
@@ -165,7 +167,13 @@ async function load() {
   loaded.value = true
 }
 
+const saving = ref(false)
+
 async function submit() {
+  // Le bouton est deja desactive pendant l'envoi, mais un double appui
+  // (Entree + clic) peut arriver avant le re-rendu : on verrouille ici aussi.
+  if (saving.value) return
+  saving.value = true
   error.value = ''
   try {
     await api.createTournament({
@@ -193,6 +201,8 @@ async function submit() {
     await load()
   } catch (e) {
     error.value = e.response?.data?.error ?? 'Erreur lors de la création du tournoi.'
+  } finally {
+    saving.value = false
   }
 }
 

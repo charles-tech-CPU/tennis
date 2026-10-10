@@ -21,8 +21,13 @@
     </div>
     <div class="actions">
       <button class="secondary" @click="toggleEdit">{{ editing ? 'Fermer' : 'Modifier les réglages' }}</button>
+      <button class="danger" :disabled="deleting" @click="removeTournament">
+        <span v-if="deleting" class="spinner" aria-hidden="true"></span>{{ deleting ? 'Suppression...' : confirmDelete ? 'Confirmer la suppression ?' : 'Supprimer' }}
+      </button>
+      <button v-if="confirmDelete && !deleting" class="secondary" @click="confirmDelete = false">Annuler</button>
     </div>
   </div>
+  <p v-if="deleteError" class="form-error">{{ deleteError }}</p>
 
   <div v-if="editing" class="card">
     <h3>Réglages du tournoi</h3>
@@ -69,7 +74,9 @@
     </div>
 
     <div class="inline" style="margin-top:16px">
-      <button @click="saveEdit">Enregistrer</button>
+      <button :disabled="savingEdit" :aria-busy="savingEdit" @click="saveEdit">
+        <span v-if="savingEdit" class="spinner" aria-hidden="true"></span>{{ savingEdit ? 'Enregistrement...' : 'Enregistrer' }}
+      </button>
       <button class="secondary" @click="toggleEdit">Annuler</button>
     </div>
     <p v-if="editError" class="form-error">{{ editError }}</p>
@@ -177,6 +184,7 @@
 
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '../services/api'
 import BracketView from '../components/BracketView.vue'
 import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, countryFlagIso, COUNTRY_NAMES, SURFACES, SURFACE_LABELS, surfaceLabel } from '../labels'
@@ -206,8 +214,14 @@ const mandatorySlots = ['AUSTRALIAN_OPEN', 'ROLAND_GARROS', 'WIMBLEDON', 'US_OPE
   'INDIAN_WELLS', 'MIAMI', 'MONTE_CARLO', 'MADRID', 'ROME', 'CANADA', 'CINCINNATI', 'SHANGHAI', 'PARIS_BERCY']
 const categories = ['GRAND_SLAM', 'MASTERS_1000', 'ATP_500', 'ATP_250', 'ATP_175', 'ATP_125', 'ATP_100', 'ATP_75', 'ATP_50']
 
+const router = useRouter()
+
 const editing = ref(false)
 const editError = ref('')
+const savingEdit = ref(false)
+const confirmDelete = ref(false)
+const deleting = ref(false)
+const deleteError = ref('')
 const editForm = reactive({
   category: '', weekNumber: null, country: '', surface: '', indoor: null, mandatorySlot: '',
   qualifyingRound1Points: null, qualifyingRound2Points: null, runnerUpPoints: null,
@@ -285,6 +299,8 @@ function toggleEdit() {
 }
 
 async function saveEdit() {
+  if (savingEdit.value) return
+  savingEdit.value = true
   editError.value = ''
   try {
     // Si la taille du tableau change, le nombre/bareme des tours est
@@ -309,6 +325,29 @@ async function saveEdit() {
     if (activeTab.value === 'main') await loadDraw(Number(props.id))
   } catch (e) {
     editError.value = e.response?.data?.error ?? 'Erreur lors de la mise à jour du tournoi.'
+  } finally {
+    savingEdit.value = false
+  }
+}
+
+// Meme principe que les autres apps : 1er appui = demande de confirmation sur
+// le bouton, 2e appui = suppression. Le backend refuse si des joueurs sont deja
+// places dans le tableau (ou ses qualifs) - voir TournamentService.delete.
+async function removeTournament() {
+  if (!confirmDelete.value) {
+    confirmDelete.value = true
+    deleteError.value = ''
+    return
+  }
+  deleting.value = true
+  try {
+    await api.deleteTournament(Number(props.id))
+    router.push('/')
+  } catch (e) {
+    deleteError.value = e.response?.data?.error ?? 'Erreur lors de la suppression du tournoi.'
+    confirmDelete.value = false
+  } finally {
+    deleting.value = false
   }
 }
 

@@ -1251,3 +1251,17 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 .topbar .portal-link {
   margin-right: 10px;
 }
+
+/* Indicateur de chargement dans un bouton pendant l'envoi d'une requete. */
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 8px;
+  vertical-align: -1px;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
