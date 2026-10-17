@@ -32,18 +32,21 @@ public class TournamentService {
     private final MatchRepository matchRepository;
     private final EntryRepository entryRepository;
     private final BracketService bracketService;
+    private final RankingSnapshotService rankingSnapshotService;
 
     public TournamentService(
             TournamentRepository tournamentRepository,
             TournamentRoundRepository tournamentRoundRepository,
             MatchRepository matchRepository,
             EntryRepository entryRepository,
-            BracketService bracketService) {
+            BracketService bracketService,
+            RankingSnapshotService rankingSnapshotService) {
         this.tournamentRepository = tournamentRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.matchRepository = matchRepository;
         this.entryRepository = entryRepository;
         this.bracketService = bracketService;
+        this.rankingSnapshotService = rankingSnapshotService;
     }
 
     @Transactional(readOnly = true)
@@ -126,6 +129,9 @@ public class TournamentService {
     @Transactional
     public TournamentDto update(Long id, TournamentUpdateDto dto) {
         Tournament t = getOrThrow(id);
+        // Bareme ou semaine modifies : photos du classement perimees a partir de
+        // l'ancienne semaine (ici) et de la nouvelle (en fin de methode).
+        rankingSnapshotService.invalidateFrom(t);
         if (dto.category() != null) {
             t.setCategory(dto.category());
         }
@@ -166,6 +172,7 @@ public class TournamentService {
                     .findByMainTournamentId(t.getId())
                     .ifPresent(q -> q.setWeekNumber(computeQualifyingWeekNumber(t)));
         }
+        rankingSnapshotService.invalidateFrom(t);
 
         return toDto(t);
     }

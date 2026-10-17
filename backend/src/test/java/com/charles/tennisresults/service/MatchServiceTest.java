@@ -42,6 +42,9 @@ class MatchServiceTest {
     @Mock
     private EntryRankingService entryRankingService;
 
+    @Mock
+    private RankingSnapshotService rankingSnapshotService;
+
     @InjectMocks
     private MatchService matchService;
 

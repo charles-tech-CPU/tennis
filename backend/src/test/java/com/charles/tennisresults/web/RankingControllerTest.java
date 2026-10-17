@@ -4,6 +4,7 @@ import static org.mockito.Mockito.verify;
 
 import com.charles.tennisresults.service.EntryRankingService;
 import com.charles.tennisresults.service.RankingService;
+import com.charles.tennisresults.service.RankingSnapshotService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,6 +19,9 @@ class RankingControllerTest {
 
     @Mock
     private EntryRankingService entryRankingService;
+
+    @Mock
+    private RankingSnapshotService rankingSnapshotService;
 
     @InjectMocks
     private RankingController controller;
@@ -34,5 +38,12 @@ class RankingControllerTest {
         controller.backfillEntryRankings();
 
         verify(entryRankingService).backfillFrozenTournaments();
+    }
+
+    @Test
+    void lEffacementDesPhotosDuClassementEstDelegueAuService() {
+        controller.clearSnapshots();
+
+        verify(rankingSnapshotService).invalidateAll();
     }
 }

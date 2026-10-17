@@ -52,6 +52,9 @@ class TournamentServiceTest {
     @Mock
     private BracketService bracketService;
 
+    @Mock
+    private RankingSnapshotService rankingSnapshotService;
+
     @InjectMocks
     private TournamentService tournamentService;
 

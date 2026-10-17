@@ -23,16 +23,19 @@ public class EntryService {
     private final TournamentRepository tournamentRepository;
     private final PlayerRepository playerRepository;
     private final BracketService bracketService;
+    private final RankingSnapshotService rankingSnapshotService;
 
     public EntryService(
             EntryRepository entryRepository,
             TournamentRepository tournamentRepository,
             PlayerRepository playerRepository,
-            BracketService bracketService) {
+            BracketService bracketService,
+            RankingSnapshotService rankingSnapshotService) {
         this.entryRepository = entryRepository;
         this.tournamentRepository = tournamentRepository;
         this.playerRepository = playerRepository;
         this.bracketService = bracketService;
+        this.rankingSnapshotService = rankingSnapshotService;
     }
 
     @Transactional(readOnly = true)
@@ -76,6 +79,7 @@ public class EntryService {
 
         entry = entryRepository.save(entry);
         bracketService.syncRound1FromEntries(tournamentId);
+        rankingSnapshotService.invalidateFrom(tournament);
         return EntryDto.from(entry);
     }
 
@@ -88,6 +92,7 @@ public class EntryService {
         bracketService.clearEntryFromMatches(entry);
         entryRepository.delete(entry);
         bracketService.syncRound1FromEntries(tournamentId);
+        rankingSnapshotService.invalidateFrom(entry.getTournament());
     }
 
     /**

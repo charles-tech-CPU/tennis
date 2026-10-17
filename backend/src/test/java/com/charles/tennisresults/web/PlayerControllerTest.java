@@ -5,6 +5,7 @@ import static org.mockito.Mockito.verify;
 import com.charles.tennisresults.dto.PlayerCreateDto;
 import com.charles.tennisresults.service.PlayerProfileService;
 import com.charles.tennisresults.service.PlayerService;
+import com.charles.tennisresults.service.RankingSnapshotService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,6 +21,9 @@ class PlayerControllerTest {
     @Mock
     private PlayerProfileService playerProfileService;
 
+    @Mock
+    private RankingSnapshotService rankingSnapshotService;
+
     @InjectMocks
     private PlayerController controller;
 
@@ -32,11 +36,13 @@ class PlayerControllerTest {
         controller.update(1L, dto);
         controller.profile(1L);
         controller.toggleFavorite(1L);
+        controller.rankingHistory(1L, 2026);
 
         verify(playerService).findAll();
         verify(playerService).create(dto);
         verify(playerService).update(1L, dto);
         verify(playerProfileService).profile(1L);
         verify(playerService).toggleFavorite(1L);
+        verify(rankingSnapshotService).history(1L, 2026);
     }
 }

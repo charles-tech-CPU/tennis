@@ -30,6 +30,9 @@ export default {
   getPlayerProfile(id) {
     return client.get(`/players/${id}/profile`).then(r => r.data)
   },
+  getPlayerRankingHistory(id, season) {
+    return client.get(`/players/${id}/ranking-history`, { params: { season } }).then(r => r.data)
+  },
 
   // Tournois
   getTournaments() {

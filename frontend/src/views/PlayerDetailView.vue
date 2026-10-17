@@ -50,6 +50,13 @@
     </div>
     <p class="field-hint">Bilan toutes saisons confondues, qualifications comprises (les byes ne comptent pas comme des matchs joués).</p>
 
+    <h2 class="section-title">Évolution du classement {{ historySeason }}</h2>
+    <RankingHistoryChart v-if="rankingHistory?.length" :points="rankingHistory" :season="historySeason" />
+    <p v-else-if="rankingHistory" class="field-hint">Jamais classé cette saison pour l'instant.</p>
+    <p v-else-if="historyError" class="field-hint">{{ historyError }}</p>
+    <p v-else class="field-hint"><span class="spinner" aria-hidden="true"></span> Calcul du classement semaine par semaine...</p>
+    <p v-if="rankingHistory?.length" class="field-hint">Classement de l'appli au début de chaque semaine (tournois des semaines précédentes), échelle logarithmique : N° 1 en haut.</p>
+
     <h2 class="section-title">Titres</h2>
     <div v-if="profile.titles.length" class="profile-titles">
       <router-link v-for="t in profile.titles" :key="t.tournamentId" :to="`/tournaments/${t.tournamentId}`" class="card profile-title">
@@ -148,12 +155,16 @@ import { computed, ref, watch } from 'vue'
 import api from '../services/api'
 import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel, surfaceLabel } from '../labels'
 import FavoriteStar from '../components/FavoriteStar.vue'
+import RankingHistoryChart from '../components/RankingHistoryChart.vue'
 
 const props = defineProps({ id: { type: String, required: true } })
 
 const profile = ref(null)
 const error = ref('')
 const selectedSeason = ref(null)
+const rankingHistory = ref(null)
+const historyError = ref('')
+const historySeason = ref(new Date().getFullYear())
 
 // Saisons jouees, la plus recente d'abord (tournaments est deja trie ainsi par le backend).
 const seasons = computed(() => [...new Set((profile.value?.tournaments ?? []).map(t => t.season))])
@@ -218,6 +229,23 @@ async function load() {
   }
 }
 
+// Charge a part : le premier calcul de l'annee peut prendre quelques secondes
+// (voir RankingSnapshotService), la fiche s'affiche sans l'attendre.
+async function loadRankingHistory() {
+  rankingHistory.value = null
+  historyError.value = ''
+  const id = props.id
+  try {
+    const points = await api.getPlayerRankingHistory(id, historySeason.value)
+    if (id === props.id) rankingHistory.value = points
+  } catch {
+    if (id === props.id) historyError.value = "Impossible de charger l'évolution du classement."
+  }
+}
+
 // Recharge si on passe d'une fiche joueur a une autre sans quitter la vue.
-watch(() => props.id, load, { immediate: true })
+watch(() => props.id, () => {
+  load()
+  loadRankingHistory()
+}, { immediate: true })
 </script>

@@ -40,6 +40,9 @@ class EntryServiceTest {
     @Mock
     private BracketService bracketService;
 
+    @Mock
+    private RankingSnapshotService rankingSnapshotService;
+
     @InjectMocks
     private EntryService entryService;
 

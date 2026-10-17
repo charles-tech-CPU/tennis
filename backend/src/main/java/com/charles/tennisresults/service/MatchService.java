@@ -22,16 +22,19 @@ public class MatchService {
     private final TournamentRoundRepository tournamentRoundRepository;
     private final BracketService bracketService;
     private final EntryRankingService entryRankingService;
+    private final RankingSnapshotService rankingSnapshotService;
 
     public MatchService(
             MatchRepository matchRepository,
             TournamentRoundRepository tournamentRoundRepository,
             BracketService bracketService,
-            EntryRankingService entryRankingService) {
+            EntryRankingService entryRankingService,
+            RankingSnapshotService rankingSnapshotService) {
         this.matchRepository = matchRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.bracketService = bracketService;
         this.entryRankingService = entryRankingService;
+        this.rankingSnapshotService = rankingSnapshotService;
     }
 
     @Transactional(readOnly = true)
@@ -78,6 +81,8 @@ public class MatchService {
         matchRepository.save(match);
 
         bracketService.advanceWinner(match, newWinner);
+        // Les photos hebdomadaires du classement des semaines suivantes sont perimees.
+        rankingSnapshotService.invalidateFrom(match.getTournament());
 
         String label =
                 tournamentRoundRepository
