@@ -475,6 +475,10 @@ td.name-cell a { font-weight: 700; letter-spacing: 0.01em; }
 .stats-grid .table-card.wide {
   grid-column: span 2;
 }
+/* Matchs marquants (vainqueur, battu, tournoi, score...) : toute la largeur. */
+.stats-grid .table-card.full {
+  grid-column: 1 / -1;
+}
 @media (max-width: 900px) {
   .stats-grid .table-card.wide { grid-column: span 1; }
 }
@@ -1299,3 +1303,8 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 .rh-table summary { cursor: pointer; color: var(--text-muted); }
 .rh-table table { margin-top: 8px; max-width: 360px; }
 .rh-table th, .rh-table td { padding: 4px 10px; font-size: 13px; }
+
+/* Stats : matchs marquants (surprises, matchs les plus disputes) */
+.stats-grid td.score-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.stats-grid .opp-rank { margin-left: 4px; color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+.stats-grid .stats-hint { margin: 0; padding: 8px 16px 12px; }

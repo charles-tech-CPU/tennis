@@ -1,6 +1,8 @@
 package com.charles.tennisresults.dto;
 
+import com.charles.tennisresults.domain.Surface;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Point de depart de l'onglet Stats : concu pour etre etendu facilement (une
@@ -20,4 +22,13 @@ public record StatsDto(
         List<StreakDto> longestWinStreaks,
         List<PlayerCountDto> topBagelsInflicted,
         List<PlayerCountDto> topEpicWins,
-        List<PlayerCountDto> mostActivePlayers) {}
+        List<PlayerCountDto> mostActivePlayers,
+        /** Le plus de victoires par surface (terre battue, gazon, dur ; toujours les 3 cles). */
+        Map<Surface, List<PlayerCountDto>> topWinsBySurface,
+        /** Victoires sur un joueur bien mieux classe (rapport des classements le plus grand). */
+        List<MatchHighlightDto> biggestUpsets,
+        /** Victoires sur un joueur du top 10 au debut du tournoi. */
+        List<PlayerCountDto> topTop10Wins,
+        List<PlayerCountDto> topTiebreaksWon,
+        /** Matchs avec le plus de jeux. */
+        List<MatchHighlightDto> longestMatches) {}

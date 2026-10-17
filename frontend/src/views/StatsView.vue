@@ -188,6 +188,54 @@
       <p v-else-if="loaded" class="subtitle">Aucune victoire à la distance actée pour cette saison encore.</p>
     </div>
 
+    <div v-for="surface in SURFACE_ORDER" :key="surface" class="table-card">
+      <h2 class="section-title">Le plus de victoires sur {{ SURFACE_TITLES[surface] }}</h2>
+      <table v-if="stats?.topWinsBySurface?.[surface]?.length">
+        <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Victoires</th></tr></thead>
+        <tbody>
+          <tr v-for="(p, i) in stats.topWinsBySurface[surface]" :key="p.playerId">
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
+            <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
+            <td class="nation-cell"><flag :nat="p.nationality" /></td>
+            <td class="num">{{ p.count }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else-if="loaded" class="subtitle">Aucun match acté sur {{ SURFACE_TITLES[surface] }} pour cette saison encore.</p>
+    </div>
+
+    <div class="table-card">
+      <h2 class="section-title">Le plus de victoires contre un top 10</h2>
+      <table v-if="stats?.topTop10Wins?.length">
+        <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Victoires</th></tr></thead>
+        <tbody>
+          <tr v-for="(p, i) in stats.topTop10Wins" :key="p.playerId">
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
+            <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
+            <td class="nation-cell"><flag :nat="p.nationality" /></td>
+            <td class="num">{{ p.count }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else-if="loaded" class="subtitle">Aucune victoire contre un top 10 actée pour cette saison encore.</p>
+    </div>
+
+    <div class="table-card">
+      <h2 class="section-title">Le plus de tie-breaks gagnés</h2>
+      <table v-if="stats?.topTiebreaksWon?.length">
+        <thead><tr><th>#</th><th>Joueur</th><th>Nation</th><th class="num">Tie-breaks</th></tr></thead>
+        <tbody>
+          <tr v-for="(p, i) in stats.topTiebreaksWon" :key="p.playerId">
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
+            <td>{{ p.lastName }} {{ p.firstName ?? '' }}</td>
+            <td class="nation-cell"><flag :nat="p.nationality" /></td>
+            <td class="num">{{ p.count }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else-if="loaded" class="subtitle">Aucun tie-break acté pour cette saison encore.</p>
+    </div>
+
     <div class="table-card">
       <h2 class="section-title">Joueur le plus actif</h2>
       <table v-if="stats?.mostActivePlayers?.length">
@@ -203,11 +251,49 @@
       </table>
       <p v-else-if="loaded" class="subtitle">Aucune inscription actée pour cette saison encore.</p>
     </div>
+
+    <div class="table-card full">
+      <h2 class="section-title">Plus grosses surprises</h2>
+      <table v-if="stats?.biggestUpsets?.length">
+        <thead><tr><th>#</th><th>Vainqueur</th><th>Battu</th><th>Tournoi</th><th>Score</th></tr></thead>
+        <tbody>
+          <tr v-for="(m, i) in stats.biggestUpsets" :key="m.matchId">
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
+            <td class="nation-cell"><player-link :player="m.winner" /> <span class="opp-rank">#{{ m.winnerRanking }}</span></td>
+            <td class="nation-cell"><player-link :player="m.loser" /> <span class="opp-rank">#{{ m.loserRanking }}</span></td>
+            <td><router-link :to="`/tournaments/${m.tournamentId}`">{{ m.tournamentName }}</router-link> <span class="opp-rank">{{ roundText(m) }}</span></td>
+            <td class="score-cell">{{ m.score }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else-if="loaded" class="subtitle">Aucune surprise actée pour cette saison encore.</p>
+      <p class="field-hint stats-hint">Classements figés au début du tournoi ; triées par rapport entre les deux classements (un 50e qui bat le N° 1 passe avant un 900e qui bat le 400e).</p>
+    </div>
+
+    <div class="table-card full">
+      <h2 class="section-title">Matchs les plus disputés (nombre de jeux)</h2>
+      <table v-if="stats?.longestMatches?.length">
+        <thead><tr><th>#</th><th>Vainqueur</th><th>Battu</th><th>Tournoi</th><th>Score</th><th class="num">Jeux</th></tr></thead>
+        <tbody>
+          <tr v-for="(m, i) in stats.longestMatches" :key="m.matchId">
+            <td class="rank-cell"><span class="rank-badge">{{ i + 1 }}</span></td>
+            <td class="nation-cell"><player-link :player="m.winner" /></td>
+            <td class="nation-cell"><player-link :player="m.loser" /></td>
+            <td><router-link :to="`/tournaments/${m.tournamentId}`">{{ m.tournamentName }}</router-link> <span class="opp-rank">{{ roundText(m) }}</span></td>
+            <td class="score-cell">{{ m.score }}</td>
+            <td class="num">{{ m.games }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <p v-else-if="loaded" class="subtitle">Aucun match acté pour cette saison encore.</p>
+    </div>
+
   </div>
 </template>
 
 <script setup>
 import { onMounted, ref, h } from 'vue'
+import { RouterLink } from 'vue-router'
 import api from '../services/api'
 import { countryFlagIso } from '../labels'
 
@@ -227,6 +313,27 @@ const flag = {
       ])
     }
   }
+}
+
+// Joueur avec drapeau et lien vers sa fiche (tableaux de matchs marquants).
+const playerLink = {
+  props: ['player'],
+  setup(props) {
+    return () => {
+      const iso = countryFlagIso(props.player.nationality)
+      return h('span', [
+        iso ? h('span', { class: `fi fi-${iso}`, title: props.player.nationality }) : null,
+        h(RouterLink, { to: `/players/${props.player.id}` }, () => `${props.player.lastName} ${props.player.firstName ?? ''}`.trim())
+      ])
+    }
+  }
+}
+
+const SURFACE_ORDER = ['CLAY', 'GRASS', 'HARD']
+const SURFACE_TITLES = { CLAY: 'terre battue', GRASS: 'gazon', HARD: 'dur' }
+
+function roundText(m) {
+  return m.qualifying ? `qualifs ${m.roundLabel}` : m.roundLabel
 }
 
 async function load() {

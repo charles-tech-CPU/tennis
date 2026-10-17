@@ -5,10 +5,13 @@ import com.charles.tennisresults.domain.EntryType;
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
 import com.charles.tennisresults.domain.Player;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.domain.TournamentCategory;
+import com.charles.tennisresults.dto.MatchHighlightDto;
 import com.charles.tennisresults.dto.NationCountDto;
 import com.charles.tennisresults.dto.PlayerCountDto;
+import com.charles.tennisresults.dto.PlayerDto;
 import com.charles.tennisresults.dto.QualifierRunDto;
 import com.charles.tennisresults.dto.StatsDto;
 import com.charles.tennisresults.dto.StreakDto;
@@ -19,6 +22,7 @@ import com.charles.tennisresults.repository.TournamentRepository;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,6 +45,10 @@ public class StatsService {
     private static final int TOP_N = 5;
     /** En dessous, un % de victoires n'est pas significatif (ex: 1 victoire sur 1 match = 100%). */
     private static final int MIN_MATCHES_FOR_WIN_RATE = 10;
+    /** "Top 10" : classement fige au debut du tournoi. */
+    private static final int TOP_10 = 10;
+    /** Surfaces du circuit actuel (la moquette n'y est plus jouee). */
+    private static final List<Surface> MAIN_SURFACES = List.of(Surface.CLAY, Surface.GRASS, Surface.HARD);
     /** "6-3", "7-6(4)" ... - le nombre de jeux du VAINQUEUR est toujours le 1er (convention standard). */
     private static final Pattern SET_PATTERN = Pattern.compile("(\\d+)-(\\d+)(?:\\(\\d+\\))?");
 
@@ -88,7 +96,12 @@ public class StatsService {
                 longestWinStreaks(completedMatches),
                 toRankedPlayers(bagelsInflictedByPlayer(completedMatches)),
                 toRankedPlayers(epicWinsByPlayer(completedMatches)),
-                toRankedPlayers(activityByPlayer(allIds)));
+                toRankedPlayers(activityByPlayer(allIds)),
+                winsBySurface(completedMatches),
+                biggestUpsets(completedMatches),
+                toRankedPlayers(top10WinsByPlayer(completedMatches)),
+                toRankedPlayers(tiebreaksWonByPlayer(completedMatches)),
+                longestMatches(completedMatches));
     }
 
     private List<Tournament> filterByCategory(List<Tournament> mains, TournamentCategory category) {
@@ -320,6 +333,114 @@ public class StatsService {
         return entryRepository.findByTournament_IdIn(tournamentIds).stream()
                 .filter(e -> !e.isBye() && e.getPlayer() != null)
                 .collect(Collectors.groupingBy(Entry::getPlayer, Collectors.counting()));
+    }
+
+    /** Top 5 des victoires sur chaque surface (celle du tournoi ; des qualifs ont celle de leur tableau principal). */
+    private Map<Surface, List<PlayerCountDto>> winsBySurface(List<Match> completedMatches) {
+        Map<Surface, List<PlayerCountDto>> bySurface = new EnumMap<>(Surface.class);
+        for (Surface surface : MAIN_SURFACES) {
+            bySurface.put(
+                    surface,
+                    toRankedPlayers(matchWinsByPlayer(completedMatches.stream()
+                            .filter(m -> m.getTournament().getSurface() == surface)
+                            .toList())));
+        }
+        return bySurface;
+    }
+
+    /** Vainqueur et perdant d'un match decide, tous deux des joueurs connus (sinon null). */
+    private record Decided(Match match, Entry winner, Entry loser) {}
+
+    private List<Decided> decided(List<Match> completedMatches) {
+        List<Decided> decided = new ArrayList<>();
+        for (Match m : completedMatches) {
+            Entry winner = m.getWinnerEntry();
+            if (winner == null || winner.getPlayer() == null) {
+                continue;
+            }
+            Entry loser = opponentOf(m, winner);
+            if (loser != null && loser.getPlayer() != null) {
+                decided.add(new Decided(m, winner, loser));
+            }
+        }
+        return decided;
+    }
+
+    /**
+     * Plus grosses surprises : victoires sur un joueur mieux classe, triees
+     * par rapport des classements (le 50e qui bat le N° 1 passe avant le 900e
+     * qui bat le 400e). Les deux classements doivent etre connus.
+     */
+    private List<MatchHighlightDto> biggestUpsets(List<Match> completedMatches) {
+        return decided(completedMatches).stream()
+                .filter(d -> d.winner().getRankingAtEntry() != null
+                        && d.loser().getRankingAtEntry() != null
+                        && d.winner().getRankingAtEntry() > d.loser().getRankingAtEntry())
+                .sorted(Comparator.<Decided>comparingDouble(d -> d.winner().getRankingAtEntry()
+                                / (double) d.loser().getRankingAtEntry())
+                        .reversed())
+                .limit(TOP_N)
+                .map(this::highlight)
+                .toList();
+    }
+
+    private Map<Player, Long> top10WinsByPlayer(List<Match> completedMatches) {
+        return decided(completedMatches).stream()
+                .filter(d -> d.loser().getRankingAtEntry() != null && d.loser().getRankingAtEntry() <= TOP_10)
+                .collect(Collectors.groupingBy(d -> d.winner().getPlayer(), Collectors.counting()));
+    }
+
+    /** Un set 7-6 (du point de vue du vainqueur du match) est un tie-break gagne par lui, 6-7 par son adversaire. */
+    private Map<Player, Long> tiebreaksWonByPlayer(List<Match> completedMatches) {
+        Map<Player, Long> counts = new HashMap<>();
+        for (Decided d : decided(completedMatches)) {
+            if (d.match().getScore() == null) {
+                continue;
+            }
+            for (int[] set : parseSets(d.match().getScore())) {
+                if (set[0] == 7 && set[1] == 6) {
+                    counts.merge(d.winner().getPlayer(), 1L, Long::sum);
+                } else if (set[0] == 6 && set[1] == 7) {
+                    counts.merge(d.loser().getPlayer(), 1L, Long::sum);
+                }
+            }
+        }
+        return counts;
+    }
+
+    private List<MatchHighlightDto> longestMatches(List<Match> completedMatches) {
+        return decided(completedMatches).stream()
+                .filter(d -> d.match().getScore() != null)
+                .sorted(Comparator.<Decided>comparingInt(d -> gamesOf(d.match()))
+                        .reversed())
+                .limit(TOP_N)
+                .map(this::highlight)
+                .toList();
+    }
+
+    private int gamesOf(Match m) {
+        return m.getScore() == null
+                ? 0
+                : parseSets(m.getScore()).stream()
+                        .mapToInt(set -> set[0] + set[1])
+                        .sum();
+    }
+
+    private MatchHighlightDto highlight(Decided d) {
+        Match m = d.match();
+        Tournament t = m.getTournament();
+        return new MatchHighlightDto(
+                m.getId(),
+                PlayerDto.from(d.winner().getPlayer()),
+                d.winner().getRankingAtEntry(),
+                PlayerDto.from(d.loser().getPlayer()),
+                d.loser().getRankingAtEntry(),
+                t.isQualifying() && t.getMainTournamentId() != null ? t.getMainTournamentId() : t.getId(),
+                t.getName(),
+                t.isQualifying(),
+                RoundLabels.labelFor(t, m.getRoundOrder()),
+                m.getScore(),
+                gamesOf(m));
     }
 
     private Entry opponentOf(Match m, Entry entry) {

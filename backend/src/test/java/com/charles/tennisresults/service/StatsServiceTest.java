@@ -1,6 +1,7 @@
 package com.charles.tennisresults.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
@@ -9,6 +10,7 @@ import com.charles.tennisresults.domain.EntryType;
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
 import com.charles.tennisresults.domain.Player;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.dto.NationCountDto;
@@ -135,6 +137,61 @@ class StatsServiceTest {
         assertThat(stats.topEpicWins()).extracting(PlayerCountDto::lastName).containsExactly("SINNER");
         assertThat(stats.mostActivePlayers()).hasSize(4);
         assertThat(stats.topWinRate()).isEmpty(); // moins de 10 matchs joues
+    }
+
+    @Test
+    void victoiresParSurfaceSurprisesTop10TieBreaksEtMatchsLesPlusLongs() {
+        Player sinner = player("SINNER");
+        Player alcaraz = player("ALCARAZ");
+        Player fils = player("FILS");
+        Player moutet = player("MOUTET");
+        Tournament rome = tournament(18);
+        rome.setSurface(Surface.CLAY);
+        Tournament miami = tournament(12);
+        miami.setSurface(Surface.HARD);
+        // Moutet (80e) bat Sinner (1er) : rapport 80 ; Fils (20e) bat Alcaraz (2e) : rapport 10.
+        match(rome, 1, 1, ranked(rome, moutet, 80), ranked(rome, sinner, 1), "7-6(5) 6-7(3) 7-5");
+        match(rome, 1, 2, ranked(rome, fils, 20), ranked(rome, alcaraz, 2), "6-4 6-4");
+        match(miami, 1, 1, ranked(miami, sinner, 1), ranked(miami, fils, 20), "6-1 6-1");
+        when(tournamentRepository.findBySeason(SEASON)).thenReturn(List.of(rome, miami));
+        when(matchRepository.findByTournament_IdInAndStatusIn(anyList(), anyList()))
+                .thenReturn(matches);
+
+        StatsDto stats = statsService.computeStats(SEASON);
+
+        assertThat(stats.topWinsBySurface()).containsOnlyKeys(Surface.CLAY, Surface.GRASS, Surface.HARD);
+        assertThat(stats.topWinsBySurface().get(Surface.CLAY))
+                .extracting(PlayerCountDto::lastName)
+                .containsExactlyInAnyOrder("MOUTET", "FILS");
+        assertThat(stats.topWinsBySurface().get(Surface.HARD))
+                .extracting(PlayerCountDto::lastName)
+                .containsExactly("SINNER");
+        assertThat(stats.topWinsBySurface().get(Surface.GRASS)).isEmpty();
+        assertThat(stats.biggestUpsets())
+                .extracting(u -> u.winner().lastName())
+                .containsExactly("MOUTET", "FILS"); // la victoire de Sinner sur Fils n'en est pas une
+        assertThat(stats.biggestUpsets().get(0)).satisfies(u -> {
+            assertThat(u.winnerRanking()).isEqualTo(80);
+            assertThat(u.loserRanking()).isEqualTo(1);
+            assertThat(u.roundLabel()).isEqualTo("SF");
+        });
+        assertThat(stats.topTop10Wins())
+                .extracting(PlayerCountDto::lastName)
+                .containsExactlyInAnyOrder("MOUTET", "FILS");
+        // 7-6 gagne par Moutet (vainqueur), 6-7 gagne par Sinner (perdant)
+        assertThat(stats.topTiebreaksWon())
+                .extracting(PlayerCountDto::lastName, PlayerCountDto::count)
+                .containsExactlyInAnyOrder(tuple("MOUTET", 1L), tuple("SINNER", 1L));
+        assertThat(stats.longestMatches()).first().satisfies(m -> {
+            assertThat(m.winner().lastName()).isEqualTo("MOUTET");
+            assertThat(m.games()).isEqualTo(13 + 13 + 12);
+        });
+    }
+
+    private Entry ranked(Tournament t, Player p, int ranking) {
+        Entry e = entry(t, p);
+        e.setRankingAtEntry(ranking);
+        return e;
     }
 
     private Match match(Tournament t, int round, int position, Entry winner, Entry loser, String score) {
