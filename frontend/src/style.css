@@ -337,6 +337,8 @@ td.actions-cell button:last-child { margin-right: 0; }
    Pas de couleur = tableau pas encore commencé. */
 tbody tr.status-completed { --row-accent: var(--grass); }
 tbody tr.status-completed td.winner-cell { color: var(--grass-soft-text); font-weight: 700; }
+/* Nom + prenom du vainqueur sur une ligne, sans etre coupe par la largeur du tableau */
+th.winner-col, td.winner-cell { min-width: 260px; }
 tbody tr.status-in-progress { background: var(--row-tint); }
 tbody tr.status-in-progress:hover { background: var(--row-tint); filter: brightness(0.985); }
 

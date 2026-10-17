@@ -34,7 +34,7 @@
           <th>Surface</th>
           <th>Saison</th>
           <th>Tableau</th>
-          <th>Vainqueur</th>
+          <th class="winner-col">Vainqueur</th>
         </tr>
       </thead>
       <tbody>

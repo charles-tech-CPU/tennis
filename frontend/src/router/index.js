@@ -9,7 +9,7 @@ import HeadToHeadView from '../views/HeadToHeadView.vue'
 import TeamCompetitionView from '../views/TeamCompetitionView.vue'
 
 const routes = [
-  { path: '/', component: TournamentsView },
+  { path: '/', component: TournamentsView, meta: { wide: true } },
   { path: '/tournaments/:id', component: TournamentDetailView, props: true, meta: { wide: true } },
   { path: '/players', component: PlayersView },
   { path: '/players/:id', component: PlayerDetailView, props: true, meta: { wide: true } },
