@@ -4,6 +4,7 @@ import com.charles.tennisresults.domain.Entry;
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
 import com.charles.tennisresults.domain.Player;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.domain.TournamentRound;
@@ -14,6 +15,8 @@ import com.charles.tennisresults.dto.PlayerProfileDto;
 import com.charles.tennisresults.dto.PlayerRecordDto;
 import com.charles.tennisresults.dto.PlayerTournamentResultDto;
 import com.charles.tennisresults.dto.RankingRowDto;
+import com.charles.tennisresults.dto.SurfaceRecordDto;
+import com.charles.tennisresults.dto.WinStreakDto;
 import com.charles.tennisresults.repository.EntryRepository;
 import com.charles.tennisresults.repository.MatchRepository;
 import com.charles.tennisresults.repository.PlayerRepository;
@@ -47,6 +50,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class PlayerProfileService {
 
     private static final List<MatchStatus> DECIDED = List.of(MatchStatus.COMPLETED, MatchStatus.BYE);
+
+    /** Surfaces du circuit actuel, dans l'ordre d'affichage (la moquette n'y est plus jouee). */
+    private static final List<Surface> MAIN_SURFACES = List.of(Surface.CLAY, Surface.GRASS, Surface.HARD);
 
     // Du plus recent au plus ancien : saison puis semaine ATP.
     private static final Comparator<PlayerTournamentResultDto> MOST_RECENT_FIRST = Comparator.comparing(
@@ -84,6 +90,18 @@ public class PlayerProfileService {
             return entry.getTournament();
         }
     }
+
+    /** Un match reellement joue (COMPLETED) par le joueur, rattache a son tournoi principal. */
+    private record Played(Match match, Tournament tournament, Tournament main, boolean won) {}
+
+    // Ordre chronologique approche (les matchs n'ont pas de date) : saison et
+    // semaine du tournoi principal, qualifs avant tableau principal, puis tour.
+    private static final Comparator<Played> CHRONOLOGICAL = Comparator.<Played, Integer>comparing(
+                    p -> p.main().getSeason(), Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparing(p -> p.main().getWeekNumber(), Comparator.nullsLast(Comparator.naturalOrder()))
+            .thenComparing(p -> p.main().getId())
+            .thenComparing(p -> !p.tournament().isQualifying())
+            .thenComparing(p -> p.match().getRoundOrder());
 
     @Transactional(readOnly = true)
     public PlayerProfileDto profile(Long playerId) {
@@ -141,12 +159,15 @@ public class PlayerProfileService {
         List<PlayerTournamentResultDto> titles =
                 tournaments.stream().filter(PlayerTournamentResultDto::champion).toList();
 
+        List<Played> played = played(entries, matchesByEntryId, mainsById);
         return withRanking(
                 player,
                 matchRecord(entryIds, matchesByEntryId),
                 titles,
                 bestByCategory(tournaments, runsByMainId),
-                tournaments);
+                tournaments,
+                surfaceRecords(played),
+                longestWinStreak(played));
     }
 
     /** Tournois principaux des tableaux de qualifs disputes (aucune requete s'il n'y en a pas). */
@@ -168,7 +189,9 @@ public class PlayerProfileService {
             PlayerRecordDto matchRecord,
             List<PlayerTournamentResultDto> titles,
             List<CategoryBestResultDto> bestByCategory,
-            List<PlayerTournamentResultDto> tournaments) {
+            List<PlayerTournamentResultDto> tournaments,
+            List<SurfaceRecordDto> surfaceRecords,
+            WinStreakDto longestWinStreak) {
         List<RankingRowDto> ranking = rankingService.computeRanking();
         Integer position = null;
         Integer total = null;
@@ -187,7 +210,79 @@ public class PlayerProfileService {
                 matchRecord,
                 titles,
                 bestByCategory,
-                tournaments);
+                tournaments,
+                surfaceRecords,
+                longestWinStreak);
+    }
+
+    /** Matchs reellement joues (pas les byes), du plus ancien au plus recent. */
+    private static List<Played> played(
+            List<Entry> entries, Map<Long, List<Match>> matchesByEntryId, Map<Long, Tournament> mainsById) {
+        List<Played> played = new ArrayList<>();
+        for (Entry entry : entries) {
+            Tournament t = entry.getTournament();
+            Tournament main = t.isQualifying() ? mainsById.getOrDefault(t.getMainTournamentId(), t) : t;
+            for (Match m : matchesByEntryId.getOrDefault(entry.getId(), List.of())) {
+                if (m.getStatus() == MatchStatus.COMPLETED) {
+                    boolean won = m.getWinnerEntry() != null
+                            && m.getWinnerEntry().getId().equals(entry.getId());
+                    played.add(new Played(m, t, main, won));
+                }
+            }
+        }
+        played.sort(CHRONOLOGICAL);
+        return played;
+    }
+
+    /** Bilan par surface, celle du tournoi principal (des qualifs se jouent sur la meme). */
+    private static List<SurfaceRecordDto> surfaceRecords(List<Played> played) {
+        return MAIN_SURFACES.stream()
+                .map(surface -> {
+                    List<Played> onSurface = played.stream()
+                            .filter(p -> p.main().getSurface() == surface)
+                            .toList();
+                    int wins = (int) onSurface.stream().filter(Played::won).count();
+                    int total = onSurface.size();
+                    return new SurfaceRecordDto(
+                            surface, total, wins, total - wins, total == 0 ? null : (double) wins / total);
+                })
+                .toList();
+    }
+
+    /** Plus longue serie de victoires (la plus recente a egalite), null sans aucune victoire. */
+    private static WinStreakDto longestWinStreak(List<Played> played) {
+        int bestLength = 0;
+        int bestStart = -1;
+        int start = -1;
+        for (int i = 0; i < played.size(); i++) {
+            if (!played.get(i).won()) {
+                start = -1;
+                continue;
+            }
+            if (start < 0) {
+                start = i;
+            }
+            int length = i - start + 1;
+            if (length >= bestLength) {
+                bestLength = length;
+                bestStart = start;
+            }
+        }
+        if (bestLength == 0) {
+            return null;
+        }
+        int endIndex = bestStart + bestLength - 1;
+        Tournament from = played.get(bestStart).main();
+        Tournament to = played.get(endIndex).main();
+        return new WinStreakDto(
+                bestLength,
+                from.getId(),
+                from.getName(),
+                from.getSeason(),
+                to.getId(),
+                to.getName(),
+                to.getSeason(),
+                endIndex == played.size() - 1);
     }
 
     /**

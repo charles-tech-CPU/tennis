@@ -1308,3 +1308,9 @@ th.star-col, td.star-col { width: 36px; text-align: center; }
 .stats-grid td.score-cell { font-variant-numeric: tabular-nums; white-space: nowrap; }
 .stats-grid .opp-rank { margin-left: 4px; color: var(--text-faint); font-size: 12px; font-variant-numeric: tabular-nums; }
 .stats-grid .stats-hint { margin: 0; padding: 8px 16px 12px; }
+
+/* Fiche joueur : bilan par surface et plus longue serie */
+.profile-stats-secondary { margin-top: 12px; }
+.profile-stat .value-sep { margin: 0 4px; color: var(--text-faint); font-weight: 600; }
+.profile-stat .streak-span { font-size: 12px; color: var(--text-muted); }
+.profile-stat .label .tag { margin-left: 4px; }

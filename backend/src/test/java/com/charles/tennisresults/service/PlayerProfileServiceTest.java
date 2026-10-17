@@ -14,6 +14,7 @@ import com.charles.tennisresults.domain.Entry;
 import com.charles.tennisresults.domain.Match;
 import com.charles.tennisresults.domain.MatchStatus;
 import com.charles.tennisresults.domain.Player;
+import com.charles.tennisresults.domain.Surface;
 import com.charles.tennisresults.domain.Tournament;
 import com.charles.tennisresults.domain.TournamentCategory;
 import com.charles.tennisresults.domain.TournamentRound;
@@ -134,8 +135,24 @@ class PlayerProfileServiceTest {
         played(madridQ, 2, aq, entry(madridQ, sinner), MatchStatus.COMPLETED);
         Entry am = entry(madrid, alcaraz);
         played(madrid, 1, entry(madrid, sinner), am, MatchStatus.COMPLETED);
+        doha.setSurface(Surface.HARD);
+        wimbledon.setSurface(Surface.GRASS);
+        madrid.setSurface(Surface.CLAY); // les qualifs (sans surface ici) suivent leur tableau principal
 
         PlayerProfileDto profile = service.profile(alcaraz.getId());
+
+        assertThat(profile.surfaceRecords())
+                .extracting(r -> r.surface() + " " + r.wins() + "-" + r.losses())
+                .containsExactly("CLAY 2-1", "GRASS 0-1", "HARD 2-0");
+        assertThat(profile.surfaceRecords().get(1).winRate()).isZero();
+        // Deux series de 2 (Doha, qualifs de Madrid) : la plus recente est retenue, terminee par la defaite au 1er
+        // tour.
+        assertThat(profile.longestWinStreak()).satisfies(s -> {
+            assertThat(s.length()).isEqualTo(2);
+            assertThat(s.fromTournamentName()).isEqualTo("MADRID");
+            assertThat(s.toSeason()).isEqualTo(2027);
+            assertThat(s.ongoing()).isFalse();
+        });
 
         assertThat(profile.rankingPosition()).isEqualTo(2);
         assertThat(profile.rankingTotal()).isEqualTo(900);
@@ -189,6 +206,30 @@ class PlayerProfileServiceTest {
     }
 
     @Test
+    void laSerieDeVictoiresEnCoursEnjambeLesTournoisEtLesSaisons() {
+        Tournament t1 = tournament("PREMIER", 2026, 40, TournamentCategory.ATP_250, 4, 10, 20);
+        Entry a1 = entry(t1, alcaraz);
+        played(t1, 1, entry(t1, sinner), a1, MatchStatus.COMPLETED); // defaite : la serie repart de zero
+        Tournament t2 = tournament("SECOND", 2026, 45, TournamentCategory.ATP_250, 4, 10, 20);
+        Entry a2 = entry(t2, alcaraz);
+        played(t2, 1, a2, entry(t2, sinner), MatchStatus.COMPLETED);
+        played(t2, 2, a2, entry(t2, sinner), MatchStatus.COMPLETED);
+        Tournament t3 = tournament("TROISIEME", 2027, 2, TournamentCategory.ATP_250, 4, 10, 20);
+        played(t3, 1, entry(t3, alcaraz), entry(t3, sinner), MatchStatus.COMPLETED);
+
+        PlayerProfileDto profile = service.profile(alcaraz.getId());
+
+        assertThat(profile.longestWinStreak()).satisfies(s -> {
+            assertThat(s.length()).isEqualTo(3);
+            assertThat(s.fromTournamentName()).isEqualTo("SECOND");
+            assertThat(s.toTournamentName()).isEqualTo("TROISIEME");
+            assertThat(s.ongoing()).isTrue();
+        });
+        assertThat(profile.surfaceRecords())
+                .allSatisfy(r -> assertThat(r.played()).isZero());
+    }
+
+    @Test
     void joueurSansTournoiNiClassement() {
         Player newcomer = player("NOUVEAU");
         when(entryRepository.findByPlayerId(newcomer.getId())).thenReturn(List.of());
@@ -198,6 +239,7 @@ class PlayerProfileServiceTest {
         assertThat(profile.rankingPosition()).isNull();
         assertThat(profile.matchRecord().played()).isZero();
         assertThat(profile.matchRecord().winRate()).isNull();
+        assertThat(profile.longestWinStreak()).isNull();
         assertThat(profile.tournaments()).isEmpty();
     }
 

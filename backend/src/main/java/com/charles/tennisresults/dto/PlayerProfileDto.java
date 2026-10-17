@@ -5,7 +5,9 @@ import java.util.List;
 /**
  * Fiche joueur. rankingPosition/rankingTotal sont null s'il n'apparait pas au
  * classement (meme calcul que /api/ranking). tournaments est trie de la
- * saison la plus recente a la plus ancienne, titles aussi.
+ * saison la plus recente a la plus ancienne, titles aussi. surfaceRecords :
+ * terre battue, gazon, dur (toujours les 3) ; longestWinStreak null sans
+ * aucune victoire.
  */
 public record PlayerProfileDto(
         PlayerDto player,
@@ -15,4 +17,6 @@ public record PlayerProfileDto(
         PlayerRecordDto matchRecord,
         List<PlayerTournamentResultDto> titles,
         List<CategoryBestResultDto> bestByCategory,
-        List<PlayerTournamentResultDto> tournaments) {}
+        List<PlayerTournamentResultDto> tournaments,
+        List<SurfaceRecordDto> surfaceRecords,
+        WinStreakDto longestWinStreak) {}

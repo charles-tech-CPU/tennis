@@ -48,6 +48,25 @@
         <span class="label">Titre{{ profile.titles.length > 1 ? 's' : '' }}</span>
       </div>
     </div>
+    <div class="profile-stats profile-stats-secondary">
+      <div v-for="r in profile.surfaceRecords" :key="r.surface" class="card profile-stat">
+        <span class="tag" :class="surfaceTagClass(r.surface)">{{ SURFACE_LABELS[r.surface] }}</span>
+        <span class="value">{{ r.wins }}<span class="value-sep">–</span>{{ r.losses }}</span>
+        <span class="label">{{ r.winRate == null ? 'Aucun match' : Math.round(r.winRate * 100) + ' % de victoires' }}</span>
+      </div>
+      <div class="card profile-stat">
+        <span class="tag tag-gold">Plus longue série</span>
+        <span class="value">{{ profile.longestWinStreak?.length ?? 0 }}</span>
+        <span class="label">
+          <template v-if="profile.longestWinStreak">
+            victoire{{ profile.longestWinStreak.length > 1 ? 's' : '' }} d'affilée
+            <span v-if="profile.longestWinStreak.ongoing" class="tag tag-grass">en cours</span>
+          </template>
+          <template v-else>Aucune victoire</template>
+        </span>
+        <span v-if="profile.longestWinStreak" class="streak-span">{{ streakSpan(profile.longestWinStreak) }}</span>
+      </div>
+    </div>
     <p class="field-hint">Bilan toutes saisons confondues, qualifications comprises (les byes ne comptent pas comme des matchs joués).</p>
 
     <h2 class="section-title">Évolution du classement {{ historySeason }}</h2>
@@ -153,7 +172,7 @@
 <script setup>
 import { computed, ref, watch } from 'vue'
 import api from '../services/api'
-import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel, surfaceLabel } from '../labels'
+import { categoryLabel, categoryTagClass, countryFlagIso, entryTypeShortLabel, surfaceLabel, SURFACE_LABELS, surfaceTagClass } from '../labels'
 import FavoriteStar from '../components/FavoriteStar.vue'
 import RankingHistoryChart from '../components/RankingHistoryChart.vue'
 
@@ -196,6 +215,13 @@ const ROUND_NAMES = {
 
 function fullName(p) {
   return p.firstName ? `${p.firstName} ${p.lastName}` : p.lastName
+}
+
+// "Roland Garros → Halle 2026", ou "Doha 2026" si la serie tient dans un seul tournoi.
+function streakSpan(s) {
+  if (s.fromTournamentId === s.toTournamentId) return `${s.fromTournamentName} ${s.fromSeason}`
+  const from = s.fromSeason === s.toSeason ? s.fromTournamentName : `${s.fromTournamentName} ${s.fromSeason}`
+  return `${from} → ${s.toTournamentName} ${s.toSeason}`
 }
 
 function resultLabel(result) {
