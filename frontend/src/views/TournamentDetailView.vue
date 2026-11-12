@@ -235,7 +235,7 @@ const scoreForm = reactive({ score: '', winnerEntryId: null })
 
 const mandatorySlots = ['AUSTRALIAN_OPEN', 'ROLAND_GARROS', 'WIMBLEDON', 'US_OPEN', 'ATP_FINALS',
   'INDIAN_WELLS', 'MIAMI', 'MONTE_CARLO', 'MADRID', 'ROME', 'CANADA', 'CINCINNATI', 'SHANGHAI', 'PARIS_BERCY']
-const categories = ['GRAND_SLAM', 'MASTERS_1000', 'ATP_500', 'ATP_250', 'ATP_175', 'ATP_125', 'ATP_100', 'ATP_75', 'ATP_50']
+const categories = ['GRAND_SLAM', 'MASTERS_1000', 'ATP_500', 'ATP_250', 'ATP_175', 'ATP_125', 'ATP_100', 'ATP_75', 'ATP_50', 'NEXT_GEN']
 
 const router = useRouter()
 

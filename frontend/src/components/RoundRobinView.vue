@@ -52,12 +52,12 @@
     <h2 class="section-title">Phase finale</h2>
     <div class="rr-knockout">
       <div class="rr-ko-col">
-        <span class="rr-ko-label">Demi-finales <span class="pts">{{ pointsOf(2) }} pts / victoire</span></span>
+        <span class="rr-ko-label">Demi-finales <span v-if="!noPoints" class="pts">{{ pointsOf(2) }} pts / victoire</span></span>
         <BracketMatchCard :match="koMatch(2, 1)" @select="emit('select-match', $event)" />
         <BracketMatchCard :match="koMatch(2, 2)" @select="emit('select-match', $event)" />
       </div>
       <div class="rr-ko-col">
-        <span class="rr-ko-label">🏆 Finale <span class="pts">{{ pointsOf(3) }} pts / victoire</span></span>
+        <span class="rr-ko-label">🏆 Finale <span v-if="!noPoints" class="pts">{{ pointsOf(3) }} pts / victoire</span></span>
         <BracketMatchCard :match="koMatch(3, 1)" @select="emit('select-match', $event)" />
         <div v-if="champion" class="rr-champion">
           🏆 {{ champion.playerFirstName ?? '' }} {{ champion.playerLastName }}
@@ -65,8 +65,9 @@
       </div>
     </div>
     <p class="field-hint">
-      Points : {{ pointsOf(1) }} par victoire en poule, {{ pointsOf(2) }} pour une demi gagnée, {{ pointsOf(3) }} pour la finale gagnée
-      (vainqueur invaincu : {{ 3 * pointsOf(1) + pointsOf(2) + pointsOf(3) }}). Demi-finales : 1er A - 2e B et 1er B - 2e A,
+      <template v-if="noPoints">Aucun point ATP dans ce tournoi.</template>
+      <template v-else>Points : {{ pointsOf(1) }} par victoire en poule, {{ pointsOf(2) }} pour une demi gagnée, {{ pointsOf(3) }} pour la finale gagnée
+      (vainqueur invaincu : {{ 3 * pointsOf(1) + pointsOf(2) + pointsOf(3) }}).</template> Demi-finales : 1er A - 2e B et 1er B - 2e A,
       remplies automatiquement quand une poule est terminée.
     </p>
 
@@ -119,6 +120,8 @@ function koMatch(round, position) {
 function pointsOf(round) {
   return props.rounds.find(r => r.roundOrder === round)?.points ?? 0
 }
+
+const noPoints = computed(() => [1, 2, 3].every(r => pointsOf(r) === 0))
 
 const champion = computed(() => {
   const f = koMatch(3, 1)

@@ -30,4 +30,9 @@ class CategoryDefaultsTest {
                 .first()
                 .isEqualTo(1);
     }
+
+    @Test
+    void lesNextGenFinalsNeDonnentAucunPoint() {
+        assertThat(CategoryDefaults.pointsFor(TournamentCategory.NEXT_GEN, 8)).containsOnly(0);
+    }
 }

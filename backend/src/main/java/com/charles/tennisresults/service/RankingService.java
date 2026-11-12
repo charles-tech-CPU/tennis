@@ -497,7 +497,8 @@ public class RankingService {
             if (m.getStatus() != MatchStatus.COMPLETED) {
                 continue;
             }
-            boolean won = m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(entry.getId());
+            boolean won =
+                    m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(entry.getId());
             if (won) {
                 points += pointsByRound.getOrDefault(m.getRoundOrder(), 0);
             }

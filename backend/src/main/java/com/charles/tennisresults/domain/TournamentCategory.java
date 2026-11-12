@@ -14,5 +14,7 @@ public enum TournamentCategory {
     ATP_125,
     ATP_100,
     ATP_75,
-    ATP_50
+    ATP_50,
+    /** Next Gen ATP Finals (meilleurs 20 ans et moins) : en poules, aucun point ATP. */
+    NEXT_GEN
 }

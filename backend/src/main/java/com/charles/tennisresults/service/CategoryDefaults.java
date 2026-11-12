@@ -52,10 +52,11 @@ public final class CategoryDefaults {
                     case ATP_100 -> 100;
                     case ATP_75 -> 75;
                     case ATP_50 -> 50;
+                    case NEXT_GEN -> 0;
                 };
         Integer[] points = new Integer[rounds];
         for (int i = rounds; i >= 1; i--) {
-            points[i - 1] = Math.max(1, base >> (rounds - i));
+            points[i - 1] = base == 0 ? 0 : Math.max(1, base >> (rounds - i));
         }
         return List.of(points);
     }

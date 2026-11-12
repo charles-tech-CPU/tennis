@@ -74,9 +74,7 @@ public class RoundRobinService {
 
     /** Poule (1 = A, 2 = B) d'une position du tableau, 0 pour un remplacant. */
     static int groupOfPosition(int drawPosition) {
-        return drawPosition >= 1 && drawPosition <= GROUP_SIZE * GROUP_COUNT
-                ? (drawPosition - 1) / GROUP_SIZE + 1
-                : 0;
+        return drawPosition >= 1 && drawPosition <= GROUP_SIZE * GROUP_COUNT ? (drawPosition - 1) / GROUP_SIZE + 1 : 0;
     }
 
     /** Position du tableau du joueur `slot` (0 = entry1, 1 = entry2) du match de poule `positionInRound`. */
@@ -95,7 +93,8 @@ public class RoundRobinService {
     public void syncGroupMatches(Long tournamentId) {
         Tournament tournament = getOrThrow(tournamentId);
         Map<Integer, Entry> byPosition = new LinkedHashMap<>();
-        entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId)
+        entryRepository
+                .findByTournamentIdOrderByDrawPositionAsc(tournamentId)
                 .forEach(e -> byPosition.put(e.getDrawPosition(), e));
 
         for (Match m : groupMatches(tournamentId)) {
@@ -170,7 +169,8 @@ public class RoundRobinService {
             GroupResult result = groupResult(tournament, g, groupMatches);
             if (result.complete()) {
                 qualifiers[g - 1][0] = result.ranked().get(0).entry;
-                qualifiers[g - 1][1] = result.ranked().size() > 1 ? result.ranked().get(1).entry : null;
+                qualifiers[g - 1][1] =
+                        result.ranked().size() > 1 ? result.ranked().get(1).entry : null;
             }
         }
         // SF1 = 1er A - 2e B, SF2 = 1er B - 2e A
@@ -292,8 +292,7 @@ public class RoundRobinService {
             }
         }
 
-        boolean complete = !matches.isEmpty()
-                && matches.stream().allMatch(m -> m.getStatus() == MatchStatus.COMPLETED);
+        boolean complete = !matches.isEmpty() && matches.stream().allMatch(m -> m.getStatus() == MatchStatus.COMPLETED);
         List<Match> completed = matches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.COMPLETED && m.getWinnerEntry() != null)
                 .toList();
@@ -339,8 +338,8 @@ public class RoundRobinService {
                 .thenComparingInt(s -> -s.played())
                 .thenComparingInt(s -> s.entry.getDrawPosition()));
         List<Stat> ranked = new ArrayList<>();
-        for (List<Stat> block : blocks(stats, Comparator.comparingInt((Stat s) -> -s.wins)
-                .thenComparingInt(s -> -s.played()))) {
+        for (List<Stat> block :
+                blocks(stats, Comparator.comparingInt((Stat s) -> -s.wins).thenComparingInt(s -> -s.played()))) {
             ranked.addAll(resolveTie(block, completed));
         }
         return ranked;
@@ -349,9 +348,8 @@ public class RoundRobinService {
     private static final List<Comparator<Stat>> TIE_BREAKS = List.of(
             (a, b) -> compareRatio(b.setsWon, b.setsWon + b.setsLost, a.setsWon, a.setsWon + a.setsLost),
             (a, b) -> compareRatio(b.gamesWon, b.gamesWon + b.gamesLost, a.gamesWon, a.gamesWon + a.gamesLost),
-            Comparator.comparingInt(s -> s.entry.getRankingAtEntry() != null
-                    ? s.entry.getRankingAtEntry()
-                    : Integer.MAX_VALUE));
+            Comparator.comparingInt(
+                    s -> s.entry.getRankingAtEntry() != null ? s.entry.getRankingAtEntry() : Integer.MAX_VALUE));
 
     private static List<Stat> resolveTie(List<Stat> block, List<Match> completed) {
         if (block.size() <= 1) {
@@ -380,7 +378,8 @@ public class RoundRobinService {
     private static List<List<Stat>> blocks(List<Stat> sorted, Comparator<Stat> criterion) {
         List<List<Stat>> blocks = new ArrayList<>();
         for (Stat s : sorted) {
-            if (blocks.isEmpty() || criterion.compare(blocks.get(blocks.size() - 1).get(0), s) != 0) {
+            if (blocks.isEmpty()
+                    || criterion.compare(blocks.get(blocks.size() - 1).get(0), s) != 0) {
                 blocks.add(new ArrayList<>());
             }
             blocks.get(blocks.size() - 1).add(s);

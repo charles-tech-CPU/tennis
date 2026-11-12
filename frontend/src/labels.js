@@ -7,7 +7,8 @@ export const CATEGORY_LABELS = {
   ATP_125: 'ATP 125',
   ATP_100: 'ATP 100',
   ATP_75: 'ATP 75',
-  ATP_50: 'ATP 50'
+  ATP_50: 'ATP 50',
+  NEXT_GEN: 'Next Gen Finals'
 }
 
 export const CATEGORY_TAG_CLASS = {
@@ -19,7 +20,8 @@ export const CATEGORY_TAG_CLASS = {
   ATP_125: 'tag-rose',
   ATP_100: 'tag-olive',
   ATP_75: 'tag-slate',
-  ATP_50: 'tag-neutral'
+  ATP_50: 'tag-neutral',
+  NEXT_GEN: 'tag-purple'
 }
 
 export function categoryLabel(category) {
