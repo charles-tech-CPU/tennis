@@ -88,6 +88,22 @@ public class Tournament {
     @Column(name = "main_tournament_id")
     private Long mainTournamentId;
 
+    /**
+     * True pour un tournoi en poules (ATP Finals) : voir RoundRobinService.
+     * Entrees 1-4 = poule A, 5-8 = poule B, 9+ = remplacants ; tour 1 = poules,
+     * tour 2 = demi-finales, tour 3 = finale ; le bareme d'un tour = points
+     * par victoire a ce tour (cumules).
+     */
+    @Column(name = "round_robin", nullable = false)
+    private boolean roundRobin = false;
+
+    /** Nom affiche des poules (ex. "John McEnroe"), null = "Groupe A" / "Groupe B". */
+    @Column(name = "group_a_name")
+    private String groupAName;
+
+    @Column(name = "group_b_name")
+    private String groupBName;
+
     @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("roundOrder ASC")
     private List<TournamentRound> rounds = new ArrayList<>();

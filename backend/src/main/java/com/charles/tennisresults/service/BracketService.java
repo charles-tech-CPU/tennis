@@ -68,6 +68,9 @@ public class BracketService {
         Tournament tournament = tournamentRepository
                 .findById(tournamentId)
                 .orElseThrow(() -> new EntityNotFoundException("Tournoi introuvable: " + tournamentId));
+        if (tournament.isRoundRobin()) {
+            return; // matchs de poule : voir RoundRobinService.syncGroupMatches
+        }
         List<Entry> entries = entryRepository.findByTournamentIdOrderByDrawPositionAsc(tournamentId);
         // Un tableau de qualifications garde sa taille reelle (groupes de 4, pas de
         // "byes" pour completer jusqu'a la puissance de 2 superieure) ; seul le
@@ -138,6 +141,9 @@ public class BracketService {
     /** Place le vainqueur dans le match du tour suivant, et sauvegarde ce match. */
     @Transactional
     public void advanceWinner(Match completedMatch, Entry winner) {
+        if (isGroupMatch(completedMatch)) {
+            return; // poule : les demi-finales se remplissent via RoundRobinService.refreshSemiFinals
+        }
         Optional<Match> parentOpt = matchRepository.findByTournamentIdAndRoundOrderAndPositionInRound(
                 completedMatch.getTournament().getId(),
                 completedMatch.getRoundOrder() + 1,
@@ -166,6 +172,9 @@ public class BracketService {
      */
     @Transactional
     public void resetDownstream(Match match) {
+        if (isGroupMatch(match)) {
+            return; // un match de poule n'alimente pas directement un match du tour suivant
+        }
         Optional<Match> parentOpt = matchRepository.findByTournamentIdAndRoundOrderAndPositionInRound(
                 match.getTournament().getId(), match.getRoundOrder() + 1, (match.getPositionInRound() + 1) / 2);
         if (parentOpt.isEmpty()) {
@@ -214,5 +223,10 @@ public class BracketService {
             match.setStatus(MatchStatus.PENDING);
             matchRepository.save(match);
         }
+    }
+
+    /** Match de poule d'un tournoi round robin (tour 1) : pas de "tour suivant" direct. */
+    private static boolean isGroupMatch(Match match) {
+        return match.getTournament().isRoundRobin() && match.getRoundOrder() == RoundRobinService.GROUP_ROUND;
     }
 }

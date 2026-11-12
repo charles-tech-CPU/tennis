@@ -16,7 +16,8 @@
         <span v-if="surfaceLabel(tournament.surface, tournament.indoor)" class="hero-chip">{{ surfaceLabel(tournament.surface, tournament.indoor) }}</span>
         <span class="hero-chip">Saison {{ tournament.season }}</span>
         <span v-if="tournament.weekNumber" class="hero-chip">Semaine {{ tournament.weekNumber }}</span>
-        <span class="hero-chip">Tableau {{ tournament.drawSize }} ({{ tournament.drawSlots }} cases)</span>
+        <span v-if="tournament.roundRobin" class="hero-chip">2 poules de 4</span>
+        <span v-else class="hero-chip">Tableau {{ tournament.drawSize }} ({{ tournament.drawSlots }} cases)</span>
       </div>
     </div>
     <div class="actions">
@@ -57,7 +58,7 @@
         <option value="">Pas une case obligatoire</option>
         <option v-for="m in mandatorySlots" :key="m" :value="m">{{ mandatorySlotLabel(m) }}</option>
       </select>
-      <input v-model.number="editForm.drawSize" aria-label="Taille réelle du tableau" type="number" min="2" placeholder="Taille réelle du tableau" />
+      <input v-if="!tournament?.roundRobin" v-model.number="editForm.drawSize" aria-label="Taille réelle du tableau" type="number" min="2" placeholder="Taille réelle du tableau" />
     </div>
     <div class="inline" style="margin-top:8px">
       <input v-model.number="editForm.qualifyingRound1Points" aria-label="Points qualif. tour 1" type="number" placeholder="Points qualif. tour 1" />
@@ -82,7 +83,7 @@
     <p v-if="editError" class="form-error">{{ editError }}</p>
   </div>
 
-  <div class="draw-tabs">
+  <div v-if="!tournament?.roundRobin" class="draw-tabs">
     <button class="tab" :class="{ active: activeTab === 'main' }" @click="switchTab('main')">Tableau principal</button>
     <button class="tab" :class="{ active: activeTab === 'qualifying' }" @click="switchTab('qualifying')">Qualifs</button>
   </div>
@@ -109,18 +110,37 @@
   </template>
 
   <template v-else>
+    <template v-if="drawTournament?.roundRobin">
+      <h2 class="section-title">Poules</h2>
+      <RoundRobinView
+        v-if="roundRobin"
+        :overview="roundRobin"
+        :matches="drawMatches"
+        :rounds="drawTournament.rounds"
+        @select-match="openScoreEditor"
+        @remove-entry="removeEntry"
+        @replace="replacePlayer"
+      />
+      <p v-if="replaceError" class="form-error">{{ replaceError }}</p>
+    </template>
+    <template v-else>
     <h2 class="section-title">Tableau</h2>
     <BracketView v-if="drawMatches.length" :rounds="drawTournament?.rounds ?? []" :matches="drawMatches" @select-match="openScoreEditor" @remove-entry="removeEntry" />
     <div v-else-if="drawLoaded" class="empty-state">
       <div class="icon">🎾</div>
       <p>Ajoute des joueurs ci-dessous pour faire apparaître le tableau du 1er tour.</p>
     </div>
+    </template>
 
     <div class="card" style="margin-top:20px">
       <h3>Ajouter au tableau ({{ drawEntries.length }} / {{ drawTournament?.drawSlots ?? '?' }})</h3>
+      <p v-if="drawTournament?.roundRobin" class="field-hint" style="margin-top:0">
+        Positions 1 à 4 : {{ drawTournament.groupAName ?? 'Groupe A' }} (poule A) — 5 à 8 : {{ drawTournament.groupBName ?? 'Groupe B' }} (poule B) —
+        9 et 10 : remplaçants. Dans chaque poule, mets la tête de série la mieux classée en premier.
+      </p>
       <form class="inline" style="margin-top:10px" @submit.prevent="submitEntry">
-        <input v-model.number="entryForm.drawPosition" aria-label="Position dans le tableau" type="number" min="1" :max="drawTournament?.drawSlots" placeholder="Position" required />
-        <label><input v-model="entryForm.bye" type="checkbox" /> Bye</label>
+        <input v-model.number="entryForm.drawPosition" aria-label="Position dans le tableau" type="number" min="1" :max="drawTournament?.roundRobin ? 10 : drawTournament?.drawSlots" placeholder="Position" required />
+        <label v-if="!drawTournament?.roundRobin"><input v-model="entryForm.bye" type="checkbox" /> Bye</label>
 
         <template v-if="!entryForm.bye">
           <template v-if="!entryForm.newPlayer">
@@ -187,6 +207,7 @@ import { onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
 import BracketView from '../components/BracketView.vue'
+import RoundRobinView from '../components/RoundRobinView.vue'
 import { categoryLabel, categoryTagClass, mandatorySlotLabel, formatMatchScore, countryFlagIso, COUNTRY_NAMES, SURFACES, SURFACE_LABELS, surfaceLabel } from '../labels'
 
 const countryNames = COUNTRY_NAMES
@@ -204,6 +225,8 @@ const drawTournament = ref(null)
 const drawEntries = ref([])
 const drawMatches = ref([])
 const drawLoaded = ref(false)
+const roundRobin = ref(null)
+const replaceError = ref('')
 
 const entryForm = reactive({ drawPosition: null, bye: false, playerId: '', seed: null, entryType: '', newPlayer: false })
 const newPlayerForm = reactive({ lastName: '', firstName: '', nationality: '' })
@@ -260,6 +283,7 @@ async function loadDraw(tid) {
   drawTournament.value = t
   drawEntries.value = e
   drawMatches.value = m
+  roundRobin.value = t.roundRobin ? await api.getRoundRobin(tid) : null
   drawLoaded.value = true
 }
 
@@ -434,6 +458,16 @@ async function submitScore() {
   await api.recordScore(scoreEditorMatch.value.id, { score, winnerEntryId: scoreForm.winnerEntryId })
   scoreEditorMatch.value = null
   await loadDraw(drawTournament.value.id)
+}
+
+async function replacePlayer(payload) {
+  replaceError.value = ''
+  try {
+    await api.replaceRoundRobinPlayer(drawTournament.value.id, payload)
+    await loadDraw(drawTournament.value.id)
+  } catch (e) {
+    replaceError.value = e.response?.data?.error ?? 'Erreur lors du remplacement.'
+  }
 }
 
 async function init() {

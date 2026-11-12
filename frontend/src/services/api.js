@@ -73,6 +73,14 @@ export default {
     return client.put(`/matches/${matchId}/score`, payload).then(r => r.data)
   },
 
+  // Poules (ATP Finals)
+  getRoundRobin(tournamentId) {
+    return client.get(`/tournaments/${tournamentId}/round-robin`).then(r => r.data)
+  },
+  replaceRoundRobinPlayer(tournamentId, payload) {
+    return client.post(`/tournaments/${tournamentId}/round-robin/replacements`, payload).then(r => r.data)
+  },
+
   // Classement
   getRanking() {
     return client.get('/ranking').then(r => r.data)

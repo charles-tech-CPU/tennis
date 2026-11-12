@@ -23,18 +23,21 @@ public class MatchService {
     private final BracketService bracketService;
     private final EntryRankingService entryRankingService;
     private final RankingSnapshotService rankingSnapshotService;
+    private final RoundRobinService roundRobinService;
 
     public MatchService(
             MatchRepository matchRepository,
             TournamentRoundRepository tournamentRoundRepository,
             BracketService bracketService,
             EntryRankingService entryRankingService,
-            RankingSnapshotService rankingSnapshotService) {
+            RankingSnapshotService rankingSnapshotService,
+            RoundRobinService roundRobinService) {
         this.matchRepository = matchRepository;
         this.tournamentRoundRepository = tournamentRoundRepository;
         this.bracketService = bracketService;
         this.entryRankingService = entryRankingService;
         this.rankingSnapshotService = rankingSnapshotService;
+        this.roundRobinService = roundRobinService;
     }
 
     @Transactional(readOnly = true)
@@ -81,6 +84,10 @@ public class MatchService {
         matchRepository.save(match);
 
         bracketService.advanceWinner(match, newWinner);
+        if (match.getTournament().isRoundRobin() && match.getRoundOrder() == RoundRobinService.GROUP_ROUND) {
+            // resultat de poule : le classement de la poule (et donc les demi-finales) peut changer
+            roundRobinService.refreshSemiFinals(match.getTournament());
+        }
         // Les photos hebdomadaires du classement des semaines suivantes sont perimees.
         rankingSnapshotService.invalidateFrom(match.getTournament());
 

@@ -299,6 +299,13 @@ public class PlayerProfileService {
         if (deepest == null) {
             return new Run(entry, 1, false, true, points, matches);
         }
+        if (entry.getTournament().isRoundRobin() && deepest.getRoundOrder() == RoundRobinService.GROUP_ROUND) {
+            // poule : une defaite n'elimine pas, une victoire ne qualifie pas forcement
+            boolean finished = matches.stream()
+                    .filter(m -> m.getRoundOrder() == RoundRobinService.GROUP_ROUND)
+                    .count() >= 3;
+            return new Run(entry, RoundRobinService.GROUP_ROUND, false, !finished, points, matches);
+        }
         boolean wonDeepest = deepest.getWinnerEntry() != null
                 && deepest.getWinnerEntry().getId().equals(entry.getId());
         int r = deepest.getRoundOrder();

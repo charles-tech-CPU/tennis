@@ -24,18 +24,21 @@ public class EntryService {
     private final PlayerRepository playerRepository;
     private final BracketService bracketService;
     private final RankingSnapshotService rankingSnapshotService;
+    private final RoundRobinService roundRobinService;
 
     public EntryService(
             EntryRepository entryRepository,
             TournamentRepository tournamentRepository,
             PlayerRepository playerRepository,
             BracketService bracketService,
-            RankingSnapshotService rankingSnapshotService) {
+            RankingSnapshotService rankingSnapshotService,
+            RoundRobinService roundRobinService) {
         this.entryRepository = entryRepository;
         this.tournamentRepository = tournamentRepository;
         this.playerRepository = playerRepository;
         this.bracketService = bracketService;
         this.rankingSnapshotService = rankingSnapshotService;
+        this.roundRobinService = roundRobinService;
     }
 
     @Transactional(readOnly = true)
@@ -51,6 +54,10 @@ public class EntryService {
         Tournament tournament = tournamentRepository
                 .findById(tournamentId)
                 .orElseThrow(() -> new EntityNotFoundException("Tournoi introuvable: " + tournamentId));
+
+        if (tournament.isRoundRobin() && dto.bye()) {
+            throw new IllegalArgumentException("Pas de bye dans un tournoi en poules.");
+        }
 
         Entry entry = new Entry();
         entry.setTournament(tournament);
@@ -78,7 +85,7 @@ public class EntryService {
         }
 
         entry = entryRepository.save(entry);
-        bracketService.syncRound1FromEntries(tournamentId);
+        syncDraw(tournament, tournamentId);
         rankingSnapshotService.invalidateFrom(tournament);
         return EntryDto.from(entry);
     }
@@ -91,8 +98,17 @@ public class EntryService {
         Long tournamentId = entry.getTournament().getId();
         bracketService.clearEntryFromMatches(entry);
         entryRepository.delete(entry);
-        bracketService.syncRound1FromEntries(tournamentId);
+        syncDraw(entry.getTournament(), tournamentId);
         rankingSnapshotService.invalidateFrom(entry.getTournament());
+    }
+
+    /** Remplit le 1er tour (ou les matchs de poule d'un tournoi round robin) a partir des entrees. */
+    private void syncDraw(Tournament tournament, Long tournamentId) {
+        if (tournament.isRoundRobin()) {
+            roundRobinService.syncGroupMatches(tournamentId);
+        } else {
+            bracketService.syncRound1FromEntries(tournamentId);
+        }
     }
 
     /**

@@ -426,6 +426,9 @@ public class RankingService {
      */
     private EntryOutcome outcome(Entry entry, Map<Integer, Integer> pointsByRound, List<Match> matches) {
         Tournament tournament = entry.getTournament();
+        if (tournament.isRoundRobin()) {
+            return roundRobinOutcome(entry, pointsByRound, matches);
+        }
 
         // Un tableau de qualifications n'a pas de "finale" unique : plusieurs
         // groupes independants produisent chacun un qualifie au dernier tour
@@ -474,6 +477,39 @@ public class RankingService {
         } else {
             return new EntryOutcome(eliminationValue(tournament, pointsByRound, r, totalRounds), false);
         }
+    }
+
+    /**
+     * Tournoi en poules (ATP Finals) : le bareme d'un tour = points PAR
+     * VICTOIRE a ce tour, cumules (200 par victoire en poule, 400 la demi,
+     * 500 la finale ; invaincu = 1500). Une defaite en poule ne coute rien.
+     * "Encore en jeu" (simple indication de couleur) : pas battu en demi ni en
+     * finale, pas champion, et soit encore des matchs de poule a jouer, soit
+     * au moins 2 victoires en poule.
+     */
+    private EntryOutcome roundRobinOutcome(Entry entry, Map<Integer, Integer> pointsByRound, List<Match> matches) {
+        int points = 0;
+        int groupPlayed = 0;
+        int groupWins = 0;
+        boolean out = false;
+        int finalRound = RoundRobinService.SEMI_FINAL_ROUND + 1;
+        for (Match m : matches) {
+            if (m.getStatus() != MatchStatus.COMPLETED) {
+                continue;
+            }
+            boolean won = m.getWinnerEntry() != null && m.getWinnerEntry().getId().equals(entry.getId());
+            if (won) {
+                points += pointsByRound.getOrDefault(m.getRoundOrder(), 0);
+            }
+            if (m.getRoundOrder() == RoundRobinService.GROUP_ROUND) {
+                groupPlayed++;
+                groupWins += won ? 1 : 0;
+            } else if (!won || m.getRoundOrder() == finalRound) {
+                out = true; // battu en demi/finale, ou champion
+            }
+        }
+        boolean alive = !out && (groupPlayed < 3 || groupWins >= 2);
+        return new EntryOutcome(points, alive);
     }
 
     static int totalRounds(Tournament tournament, Map<Integer, Integer> pointsByRound) {

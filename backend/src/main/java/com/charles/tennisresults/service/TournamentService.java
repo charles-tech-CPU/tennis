@@ -185,6 +185,9 @@ public class TournamentService {
      * defaut de la categorie et le squelette (vide) du tableau.
      */
     private void resizeDraw(Tournament t, int newDrawSize) {
+        if (t.isRoundRobin()) {
+            throw new IllegalArgumentException("Un tournoi en poules garde toujours ses 8 joueurs.");
+        }
         if (t.isQualifying()) {
             throw new IllegalArgumentException(
                     "Redimensionner un tableau de qualifications n'est pas supporte : supprime-le et recree-le.");
@@ -341,7 +344,10 @@ public class TournamentService {
                 qualifyingTournamentId,
                 status,
                 colorHue,
-                winnerOf(t, status));
+                winnerOf(t, status),
+                t.isRoundRobin(),
+                t.getGroupAName(),
+                t.getGroupBName());
     }
 
     /** Vainqueur de la finale du tableau principal, uniquement si le tournoi est termine. */

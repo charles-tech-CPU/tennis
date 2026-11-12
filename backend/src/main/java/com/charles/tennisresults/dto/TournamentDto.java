@@ -26,4 +26,7 @@ public record TournamentDto(
         Long qualifyingTournamentId,
         TournamentStatus status,
         Integer colorHue,
-        TournamentWinnerDto winner) {}
+        TournamentWinnerDto winner,
+        boolean roundRobin,
+        String groupAName,
+        String groupBName) {}
