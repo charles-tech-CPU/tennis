@@ -520,13 +520,13 @@ watch(() => props.competition, async () => {
   // Ouvre sur la derniere saison saisie.
   const known = await api.getTeamSeasons(props.competition)
   const target = known.length ? Math.max(...known) : new Date().getFullYear()
-  if (target === season.value) load()
+  if (target === season.value) await load()
   else season.value = target // le watch(season) recharge
 }, { immediate: true })
 
-watch(season, () => {
+watch(season, async () => {
   closeTie()
-  load()
+  await load()
 })
 
 onMounted(() => {

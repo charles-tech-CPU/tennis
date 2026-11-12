@@ -270,8 +270,9 @@ async function loadRankingHistory() {
 }
 
 // Recharge si on passe d'une fiche joueur a une autre sans quitter la vue.
+// Les deux chargements gerent eux-memes leurs erreurs : rien a attendre ici.
 watch(() => props.id, () => {
-  load()
-  loadRankingHistory()
+  void load()
+  void loadRankingHistory()
 }, { immediate: true })
 </script>

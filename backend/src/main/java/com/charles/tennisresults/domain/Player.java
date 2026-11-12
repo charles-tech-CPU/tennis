@@ -21,8 +21,10 @@ public class Player {
     private String lastName;
 
     /** Prenom. Peut etre inconnu (null) pour un joueur cree a la volee depuis un tableau. */
+    @SuppressWarnings("java:S9438") // modifie par le setter Lombok (PlayerService.update) et par JPA
     private String firstName;
 
+    @SuppressWarnings("java:S9438") // modifie par le setter Lombok (PlayerService.update) et par JPA
     private String nationality;
 
     /**
