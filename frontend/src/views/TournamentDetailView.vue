@@ -145,10 +145,10 @@
         <template v-if="!entryForm.bye">
           <template v-if="!entryForm.newPlayer">
             <select v-model.number="entryForm.playerId" aria-label="Joueur" required>
-              <option disabled value="">Joueur</option>
-              <option v-for="p in players" :key="p.id" :value="p.id">{{ p.lastName }} {{ p.firstName ?? '' }}</option>
+              <option disabled value="">{{ qualifyingPick ? qualifyingPick.placeholder : 'Joueur' }}</option>
+              <option v-for="p in selectablePlayers" :key="p.id" :value="p.id">{{ p.lastName }} {{ p.firstName ?? '' }}</option>
             </select>
-            <button type="button" class="secondary" @click="entryForm.newPlayer = true">+ Nouveau joueur</button>
+            <button v-if="!qualifyingPick" type="button" class="secondary" @click="entryForm.newPlayer = true">+ Nouveau joueur</button>
           </template>
           <template v-else>
             <input v-model="newPlayerForm.lastName" aria-label="Nom" placeholder="Nom" required />
@@ -175,6 +175,7 @@
         </select>
         <button type="submit">Ajouter</button>
       </form>
+      <p v-if="qualifyingPick" class="field-hint">{{ qualifyingPick.hint }}</p>
       <p v-if="error" class="form-error">{{ error }}</p>
       <p v-if="duplicateWarning" class="form-warning">{{ duplicateWarning }}</p>
     </div>
@@ -203,7 +204,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '../services/api'
 import BracketView from '../components/BracketView.vue'
@@ -270,6 +271,59 @@ async function loadMain() {
   players.value = await api.getPlayers()
 }
 
+// Matchs et bareme du tableau de qualifs, pour proposer directement les
+// qualifies / lucky losers dans le tableau principal (plutot que la liste
+// complete des joueurs).
+const qualifyingMatches = ref([])
+const qualifyingRoundCount = ref(0)
+
+async function loadQualifyingResults() {
+  const qid = tournament.value?.qualifyingTournamentId
+  if (!qid) {
+    qualifyingMatches.value = []
+    qualifyingRoundCount.value = 0
+    return
+  }
+  const [qt, qm] = await Promise.all([api.getTournament(qid), api.getMatches(qid)])
+  qualifyingRoundCount.value = qt.rounds?.length ?? 0
+  qualifyingMatches.value = qm
+}
+
+function entryPlayer(e) {
+  return e?.playerId ? { id: e.playerId, lastName: e.playerLastName, firstName: e.playerFirstName } : null
+}
+
+const qualifyingPick = computed(() => {
+  if (activeTab.value !== 'main' || !tournament.value?.qualifyingTournamentId) return null
+  const type = entryForm.entryType
+  if (type !== 'QUALIFIER' && type !== 'LUCKY_LOSER') return null
+  const lastRound = qualifyingMatches.value.filter(m =>
+    m.roundOrder === qualifyingRoundCount.value && m.status === 'COMPLETED' && m.winnerEntryId)
+  const inMainDraw = new Set(drawEntries.value.map(e => e.playerId).filter(Boolean))
+  const byId = new Map()
+  for (const m of lastRound) {
+    const winner = [m.entry1, m.entry2].find(e => e?.id === m.winnerEntryId)
+    const loser = [m.entry1, m.entry2].find(e => e && e.id !== m.winnerEntryId)
+    const p = entryPlayer(type === 'QUALIFIER' ? winner : loser)
+    if (p && !inMainDraw.has(p.id)) byId.set(p.id, p)
+  }
+  const list = [...byId.values()].sort((a, b) => a.lastName.localeCompare(b.lastName))
+  return type === 'QUALIFIER'
+    ? { players: list, placeholder: list.length ? 'Qualifié' : 'Aucun qualifié disponible',
+        hint: 'Liste limitée aux vainqueurs du dernier tour des qualifs pas encore placés dans le tableau.' }
+    : { players: list, placeholder: list.length ? 'Lucky loser' : 'Aucun lucky loser disponible',
+        hint: 'Liste limitée aux perdants du dernier tour des qualifs pas encore placés dans le tableau.' }
+})
+
+const selectablePlayers = computed(() => qualifyingPick.value ? qualifyingPick.value.players : players.value)
+
+watch(() => entryForm.entryType, () => {
+  if (qualifyingPick.value) {
+    entryForm.newPlayer = false
+    if (!qualifyingPick.value.players.some(p => p.id === entryForm.playerId)) entryForm.playerId = ''
+  }
+})
+
 async function loadDraw(tid) {
   drawLoaded.value = false
   if (!tid) {
@@ -290,7 +344,7 @@ async function loadDraw(tid) {
 async function switchTab(tab) {
   activeTab.value = tab
   const tid = tab === 'main' ? Number(props.id) : tournament.value?.qualifyingTournamentId
-  await loadDraw(tid)
+  await Promise.all([loadDraw(tid), tab === 'main' ? loadQualifyingResults() : Promise.resolve()])
 }
 
 async function createQualifying() {
