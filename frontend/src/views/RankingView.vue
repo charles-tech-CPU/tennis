@@ -23,7 +23,7 @@
     à cette même semaine est automatiquement retirée dès que la nouvelle a débuté.
     Calcul automatique : 4 Grand Chelem + 8 des 9 Masters 1000 (hors Monte-Carlo) +
     somme des 5 meilleurs autres tournois + le meilleur entre Monte-Carlo et le 6e meilleur autre tournoi.
-    L'ATP Finals ne compte pas dans le total : ses points sont affichés à part, en fin de tableau.
+    + les points de l'ATP Finals (colonne à part en fin de tableau, renseignée uniquement pour ses participants).
     Seuls les tournois avec un résultat acté (joueur éliminé ou vainqueur) comptent.
     Une case obligatoire jamais disputée (faute de classement suffisant) est comblée par le meilleur
     résultat excédentaire disponible (au-delà des 5 + remplacement) : affiché <em>en italique</em> avec
@@ -60,7 +60,7 @@
             <th :colspan="5" class="group-header others">5 meilleurs autres tournois</th>
             <th rowspan="2" class="group-header repl">Remplacement</th>
             <th rowspan="2" class="group-header nc">Non comptabilisés</th>
-            <th rowspan="2" class="group-header finals" title="Tournoi des qualifiés de fin de saison : non compté dans le total">ATP Finals<br><small>(hors total)</small></th>
+            <th rowspan="2" class="group-header finals" title="Tournoi des qualifiés de fin de saison : points ajoutés au total, uniquement pour ses participants">ATP Finals</th>
           </tr>
           <tr>
             <th v-for="s in grandSlamSlots" :key="s" scope="col" class="num small-head">{{ slotHeader(s) }}</th>
@@ -115,7 +115,7 @@
             <td class="non-counted">
               <span v-for="(nc, idx) in r.nonCounted" :key="idx" class="tag" :style="liveCellStyle(r, nc)">{{ nc.tournamentName }} ({{ nc.points }})</span>
             </td>
-            <td class="num" :style="liveCellStyle(r, r.atpFinals)">{{ r.atpFinals?.points ?? '—' }}</td>
+            <td class="num" :style="liveCellStyle(r, r.atpFinals)">{{ r.atpFinals ? r.atpFinals.points : '' }}</td>
           </tr>
         </tbody>
       </table>

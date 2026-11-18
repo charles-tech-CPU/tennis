@@ -48,10 +48,12 @@ import org.springframework.transaction.annotation.Transactional;
  * classement - les qualifs partagent la couleur/le statut de leur tournoi
  * principal (memes joueurs, meme evenement).
  *
- * L'ATP Finals ne compte PAS dans le total (Charles, 2026-09-25) : ce n'est
- * pas une case a remplir mais le tournoi des qualifies de fin de saison. Ses
- * points eventuels sont renvoyes a part ({@link RankingRowDto#atpFinals()}),
- * et aucun resultat excedentaire n'y est recycle.
+ * L'ATP Finals n'est pas une case a remplir mais le tournoi des qualifies de
+ * fin de saison : ses points sont renvoyes dans une colonne a part
+ * ({@link RankingRowDto#atpFinals()}), renseignee uniquement pour ses
+ * participants (0 compris s'ils n'ont gagne aucun match), et aucun resultat
+ * excedentaire n'y est recycle. Ils s'AJOUTENT au total (Charles, 2026-11-18 :
+ * comme sur le vrai circuit ATP).
  */
 @Service
 public class RankingService {
@@ -271,7 +273,8 @@ public class RankingService {
             EntryOutcome outcome = pointsEarned(entry, context);
             Tournament effective = context.effective(entry.getTournament());
 
-            if (outcome.points() > 0) {
+            boolean atpFinals = effective.getMandatorySlot() == MandatorySlot.ATP_FINALS;
+            if (outcome.points() > 0 || atpFinals) { // participant ATP Finals : colonne renseignee meme a 0
                 pointsByTournamentId.merge(effective.getId(), outcome.points(), Integer::sum);
                 tournamentById.putIfAbsent(effective.getId(), effective);
             }
@@ -299,7 +302,7 @@ public class RankingService {
             if (slot == MandatorySlot.MONTE_CARLO) {
                 monteCarlo = dto;
             } else if (slot == MandatorySlot.ATP_FINALS) {
-                atpFinals = dto; // hors total
+                atpFinals = dto; // colonne a part, ajoutee au total
             } else if (slot != null) {
                 mandatorySlots.put(slot, dto);
             } else {
@@ -325,7 +328,8 @@ public class RankingService {
         int sixthPts = pointsOf(sixth);
         TournamentPointsDto replacement = monteCarloPts >= sixthPts ? monteCarlo : sixth;
         int replacementValue = Math.max(monteCarloPts, sixthPts);
-        if (sumOf(mandatorySlots) + best5 + replacementValue == 0) {
+        int atpFinalsPts = pointsOf(buckets.atpFinals());
+        if (sumOf(mandatorySlots) + best5 + replacementValue + atpFinalsPts == 0) {
             return null; // aucun resultat acte encore comptabilisable : inutile dans le classement
         }
 
@@ -355,7 +359,7 @@ public class RankingService {
                 mandatoryTotal,
                 best5,
                 replacementValue,
-                mandatoryTotal + best5 + replacementValue,
+                mandatoryTotal + best5 + replacementValue + atpFinalsPts,
                 new ArrayList<>(results.liveByTournamentId().values()));
     }
 

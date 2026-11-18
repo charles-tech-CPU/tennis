@@ -180,7 +180,7 @@ class RankingServiceTest {
     }
 
     @Test
-    void lesPointsDeLAtpFinalsSontAffichesAPartSansCompterDansLeTotal() {
+    void lesPointsDeLAtpFinalsSontAffichesAPartEtAjoutesAuTotal() {
         win(alcaraz, tournament("ROLAND GARROS", 2026, 22, MandatorySlot.ROLAND_GARROS, 2, 2000));
         win(alcaraz, tournament("TURIN", 2026, 46, MandatorySlot.ATP_FINALS, 2, 1500));
 
@@ -188,7 +188,21 @@ class RankingServiceTest {
 
         assertThat(row.atpFinals().points()).isEqualTo(1500);
         assertThat(row.mandatorySlots()).doesNotContainKey(MandatorySlot.ATP_FINALS);
-        assertThat(row.total()).isEqualTo(2000);
+        assertThat(row.total()).isEqualTo(3500);
+    }
+
+    @Test
+    void laColonneAtpFinalsEstRenseigneeAZeroPourUnParticipantSansVictoire() {
+        win(sinner, tournament("ROLAND GARROS", 2026, 22, MandatorySlot.ROLAND_GARROS, 2, 2000));
+        win(alcaraz, tournament("MADRID", 2026, 17, MandatorySlot.MADRID, 2, 1000));
+        Tournament turin = tournament("TURIN", 2026, 46, MandatorySlot.ATP_FINALS, 2, 1500);
+        played(turin, 1, 1, entry(turin, alcaraz), entry(turin, sinner));
+
+        List<RankingRowDto> ranking = rankingService.computeRanking();
+
+        assertThat(row(ranking, "SINNER").atpFinals().points()).isZero();
+        assertThat(row(ranking, "SINNER").total()).isEqualTo(2000);
+        assertThat(row(ranking, "ALCARAZ").total()).isEqualTo(2500);
     }
 
     @Test
